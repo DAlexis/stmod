@@ -38,7 +38,9 @@
 #include <fstream>
 #include <iostream>
 #include <deal.II/base/logstream.h>
+
 using namespace dealii;
+
 template <int dim>
 class Step4
 {
@@ -58,7 +60,11 @@ private:
     SparseMatrix<double> system_matrix;
     Vector<double> solution;
     Vector<double> system_rhs;
+
+    double phi_0 = 0;
+    double pli_L = 1;
 };
+
 template <int dim>
 class RightHandSide : public Function<dim>
 {
@@ -69,6 +75,7 @@ public:
     virtual double value(const Point<dim> & p,
                                              const unsigned int component = 0) const override;
 };
+
 template <int dim>
 class BoundaryValues : public Function<dim>
 {
@@ -79,6 +86,7 @@ public:
     virtual double value(const Point<dim> & p,
                                              const unsigned int component = 0) const override;
 };
+
 template <int dim>
 double RightHandSide<dim>::value(const Point<dim> &p,
                                                                  const unsigned int /*component*/) const
@@ -88,17 +96,20 @@ double RightHandSide<dim>::value(const Point<dim> &p,
         return_value += 4.0 * std::pow(p(i), 4.0);
     return return_value;
 }
+
 template <int dim>
 double BoundaryValues<dim>::value(const Point<dim> &p,
                                                                     const unsigned int /*component*/) const
 {
     return p.square();
 }
+
 template <int dim>
 Step4<dim>::Step4()
     : fe(1)
     , dof_handler(triangulation)
 {}
+
 template <int dim>
 void Step4<dim>::make_grid()
 {
@@ -109,6 +120,7 @@ void Step4<dim>::make_grid()
                         << "     Total number of cells: " << triangulation.n_cells()
                         << std::endl;
 }
+
 template <int dim>
 void Step4<dim>::setup_system()
 {
@@ -122,57 +134,96 @@ void Step4<dim>::setup_system()
     solution.reinit(dof_handler.n_dofs());
     system_rhs.reinit(dof_handler.n_dofs());
 }
+
 template <int dim>
 void Step4<dim>::assemble_system()
 {
     QGauss<dim> quadrature_formula(fe.degree + 1);
+    QGauss<dim-1> face_quadrature_formula(3);
+
     const RightHandSide<dim> right_hand_side;
-    FEValues<dim> fe_values(fe, quadrature_formula,
-        update_values | update_gradients |
-            update_quadrature_points | update_JxW_values);
+    FEValues<dim> fe_values(
+		fe, quadrature_formula,
+		update_values | update_gradients |
+        update_quadrature_points | update_JxW_values
+	);
+
+    FEFaceValues<dim> fe_face_values(
+    	fe, face_quadrature_formula,
+		update_values         | update_quadrature_points  |
+		update_normal_vectors | update_JxW_values
+	);
+
     const unsigned int dofs_per_cell = fe.dofs_per_cell;
-    const unsigned int n_q_points        = quadrature_formula.size();
+    const unsigned int n_q_points    = quadrature_formula.size();
+
     FullMatrix<double> cell_matrix(dofs_per_cell, dofs_per_cell);
     Vector<double>         cell_rhs(dofs_per_cell);
+
     std::vector<types::global_dof_index> local_dof_indices(dofs_per_cell);
+
     for (const auto &cell : dof_handler.active_cell_iterators())
-        {
-            fe_values.reinit(cell);
-            cell_matrix = 0;
-            cell_rhs        = 0;
-            for (unsigned int q_index = 0; q_index < n_q_points; ++q_index)
-                for (unsigned int i = 0; i < dofs_per_cell; ++i)
-                    {
-                        for (unsigned int j = 0; j < dofs_per_cell; ++j)
-                            cell_matrix(i, j) +=
-                                (fe_values.shape_grad(i, q_index) * // grad phi_i(x_q)
-                                 fe_values.shape_grad(j, q_index) * // grad phi_j(x_q)
-                                 fe_values.JxW(q_index));                     // dx
-                        const auto x_q = fe_values.quadrature_point(q_index);
-                        cell_rhs(i) += (fe_values.shape_value(i, q_index) * // phi_i(x_q)
-                                                        right_hand_side.value(x_q) *                // f(x_q)
-                                                        fe_values.JxW(q_index));                        // dx
-                    }
-            cell->get_dof_indices(local_dof_indices);
-            for (unsigned int i = 0; i < dofs_per_cell; ++i)
-                {
-                    for (unsigned int j = 0; j < dofs_per_cell; ++j)
-                        system_matrix.add(local_dof_indices[i],
-                                                            local_dof_indices[j],
-                                                            cell_matrix(i, j));
-                    system_rhs(local_dof_indices[i]) += cell_rhs(i);
-                }
-        }
+	{
+		fe_values.reinit(cell);
+		cell_matrix = 0;
+		cell_rhs        = 0;
+		for (unsigned int q_index = 0; q_index < n_q_points; ++q_index)
+			for (unsigned int i = 0; i < dofs_per_cell; ++i)
+			{
+				for (unsigned int j = 0; j < dofs_per_cell; ++j)
+				{
+					const auto x_q = fe_values.quadrature_point(q_index);
+					const double r = x_q[0];
+					cell_matrix(i, j) += (
+						fe_values.shape_grad(i, q_index) * // grad phi_i(x_q)
+						fe_values.shape_grad(j, q_index) * // grad phi_j(x_q)
+						r *                                // r
+						fe_values.JxW(q_index)             // dx
+					);
+				}
+				const auto x_q = fe_values.quadrature_point(q_index);
+				const double r = x_q[0];
+				cell_rhs(i) += (
+					fe_values.shape_value(i, q_index) * // phi_i(x_q)
+					right_hand_side.value(x_q) *        // f(x_q)
+					r *                                 // r
+					fe_values.JxW(q_index)              // dx
+				);
+			}
+		cell->get_dof_indices(local_dof_indices);
+		for (unsigned int i = 0; i < dofs_per_cell; ++i)
+		{
+			for (unsigned int j = 0; j < dofs_per_cell; ++j)
+				system_matrix.add(local_dof_indices[i],
+													local_dof_indices[j],
+													cell_matrix(i, j));
+			system_rhs(local_dof_indices[i]) += cell_rhs(i);
+		}
+
+		for (unsigned int face_number=0; face_number<GeometryInfo<dim>::faces_per_cell; ++face_number)
+		{
+			if (!cell->face(face_number)->at_boundary())
+				continue;
+			fe_face_values.reinit(cell, face_number);
+		}
+	}
+
+    /*
     std::map<types::global_dof_index, double> boundary_values;
-    VectorTools::interpolate_boundary_values(dof_handler,
-                                                                                     0,
-                                                                                     BoundaryValues<dim>(),
-                                                                                     boundary_values);
-    MatrixTools::apply_boundary_values(boundary_values,
-                                                                         system_matrix,
-                                                                         solution,
-                                                                         system_rhs);
+    VectorTools::interpolate_boundary_values(
+		dof_handler,
+		0,
+		BoundaryValues<dim>(),
+		boundary_values
+	);
+    MatrixTools::apply_boundary_values(
+    	boundary_values,
+		system_matrix,
+		solution,
+		system_rhs
+	);*/
 }
+
 template <int dim>
 void Step4<dim>::solve()
 {
@@ -182,6 +233,7 @@ void Step4<dim>::solve()
     std::cout << "     " << solver_control.last_step()
                         << " CG iterations needed to obtain convergence." << std::endl;
 }
+
 template <int dim>
 void Step4<dim>::output_results() const
 {
@@ -192,6 +244,7 @@ void Step4<dim>::output_results() const
     std::ofstream output(dim == 2 ? "solution-2d.vtk" : "solution-3d.vtk");
     data_out.write_vtk(output);
 }
+
 template <int dim>
 void Step4<dim>::run()
 {
@@ -203,6 +256,7 @@ void Step4<dim>::run()
     solve();
     output_results();
 }
+
 int main()
 {
     deallog.depth_console(0);
@@ -210,9 +264,10 @@ int main()
         Step4<2> laplace_problem_2d;
         laplace_problem_2d.run();
     }
+    /*
     {
         Step4<3> laplace_problem_3d;
         laplace_problem_3d.run();
-    }
+    }*/
     return 0;
 }

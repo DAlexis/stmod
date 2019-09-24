@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 2.8)
 
 project(stmod-runner)
 
+#set (CMAKE_CXX_STANDARD 14)
+
 find_package (Boost COMPONENTS date_time program_options REQUIRED)
 
 set(EXE_SOURCES
@@ -15,6 +17,7 @@ set(${PROJECT_NAME}_USED_INCDIRS
 include_directories(
     ${${PROJECT_NAME}_USED_INCDIRS}
 )
+
 
 add_executable(${PROJECT_NAME} ${EXE_SOURCES})
 
