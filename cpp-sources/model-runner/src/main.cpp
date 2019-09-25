@@ -18,6 +18,7 @@
 #include <deal.II/grid/tria.h>
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/grid/grid_generator.h>
+#include <deal.II/grid/grid_tools.h>
 #include <deal.II/grid/tria_accessor.h>
 #include <deal.II/grid/tria_iterator.h>
 #include <deal.II/dofs/dof_accessor.h>
@@ -91,10 +92,11 @@ template <int dim>
 double RightHandSide<dim>::value(const Point<dim> &p,
                                                                  const unsigned int /*component*/) const
 {
-    double return_value = 0.0;
+    return 0.0;
+/*    double return_value = 0.0;
     for (unsigned int i = 0; i < dim; ++i)
         return_value += 4.0 * std::pow(p(i), 4.0);
-    return return_value;
+    return return_value;*/
 }
 
 template <int dim>
@@ -113,7 +115,31 @@ Step4<dim>::Step4()
 template <int dim>
 void Step4<dim>::make_grid()
 {
-    GridGenerator::hyper_cube(triangulation, -1, 1);
+    double R = 1, L = 1;
+    GridGenerator::hyper_rectangle(triangulation,
+        Point<2>(0, 0),
+        Point<2>(R, L),
+        false
+    );
+
+//    GridGenerator::hyper_cube(triangulation, -1, 1);
+
+    auto cell = triangulation.begin_active();
+    for (unsigned int face_number=0; face_number < GeometryInfo<dim>::faces_per_cell; ++face_number)
+    {
+        auto face = cell->face(face_number);
+        if (!face->at_boundary())
+        {
+            // Strange
+            continue;
+        }
+        Point<2> center = face->center();
+        if (center(0) > R/3 && center(0) < 2*R/3 && center(1) < L/2)
+            face->set_boundary_id(1);
+        else if (center(0) > R/3 && center(0) < 2*R/3 && center(1) > L/2)
+            face->set_boundary_id(2);
+    }
+
     triangulation.refine_global(4);
     std::cout << "     Number of active cells: " << triangulation.n_active_cells()
                         << std::endl
@@ -199,29 +225,42 @@ void Step4<dim>::assemble_system()
 													cell_matrix(i, j));
 			system_rhs(local_dof_indices[i]) += cell_rhs(i);
 		}
-
+/*
+        // Neumann conditrions
 		for (unsigned int face_number=0; face_number<GeometryInfo<dim>::faces_per_cell; ++face_number)
 		{
 			if (!cell->face(face_number)->at_boundary())
 				continue;
 			fe_face_values.reinit(cell, face_number);
-		}
+        }*/
+
 	}
 
-    /*
+    double phi_0 = 0.123;
+    double phi_L = 1.321;
     std::map<types::global_dof_index, double> boundary_values;
     VectorTools::interpolate_boundary_values(
 		dof_handler,
-		0,
-		BoundaryValues<dim>(),
+        1,
+        Functions::ConstantFunction<dim>(phi_0),
+        //BoundaryValues<dim>(),
 		boundary_values
 	);
+
+    VectorTools::interpolate_boundary_values(
+        dof_handler,
+        2,
+        Functions::ConstantFunction<dim>(phi_L),
+        //BoundaryValues<dim>(),
+        boundary_values
+    );
+
     MatrixTools::apply_boundary_values(
     	boundary_values,
 		system_matrix,
 		solution,
 		system_rhs
-	);*/
+    );
 }
 
 template <int dim>
