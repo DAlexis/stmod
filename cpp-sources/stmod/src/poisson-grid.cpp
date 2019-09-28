@@ -9,6 +9,53 @@
 
 using namespace dealii;
 
+void BoundaryAssigner::assign_boundary_ids(dealii::Triangulation<2>& tria)
+{
+    double right_border = 0;
+    double top_border = 0;
+    const double eps = 0.001;
+    for (auto cell = tria.begin_active(); cell != tria.end(); ++cell)
+    {
+        if (!cell->at_boundary())
+            continue;
+
+        for (unsigned int face_number=0; face_number < GeometryInfo<2>::faces_per_cell; ++face_number)
+        {
+            auto face = cell->face(face_number);
+            if (!face->at_boundary())
+                continue;
+
+            auto center = face->center();
+            if (center(0) > right_border)
+                right_border = center(0);
+            if (center(1) > top_border)
+                top_border = center(1);
+        }
+    }
+
+    for (auto cell = tria.begin_active(); cell != tria.end(); ++cell)
+    {
+        if (!cell->at_boundary())
+            continue;
+
+        for (unsigned int face_number=0; face_number < GeometryInfo<2>::faces_per_cell; ++face_number)
+        {
+            auto face = cell->face(face_number);
+            if (!face->at_boundary())
+                continue;
+
+            auto center = face->center();
+            if (center(0) < eps || center(0) > right_border - eps)
+                continue;
+
+            if (center(1) > top_border / 2.0)
+                face->set_boundary_id(1);
+            else
+                face->set_boundary_id(2);
+        }
+    }
+}
+
 PoissonGrid::PoissonGrid(const AreaConfig& config) :
     m_config(config)
 {
@@ -26,8 +73,11 @@ void PoissonGrid::make_grid()
     assign_boundary_ids(bottom_needle_height, top_needle_height);
     refine_rectangular_needles();
     transform_needle(bottom_needle_height, top_needle_height);
-    //std::map<unsigned int, Point<2>> empty_map;
-    //GridTools::laplace_transform(empty_map, m_triangulation);
+
+    std::cout << "     Number of active cells: " << m_triangulation.n_active_cells()
+                        << std::endl
+                        << "     Total number of cells: " << m_triangulation.n_cells()
+                        << std::endl;
 }
 
 void PoissonGrid::make_initial_grid()
@@ -39,10 +89,6 @@ void PoissonGrid::make_initial_grid()
     );
 
     m_triangulation.refine_global(m_config.initial_refine);
-    std::cout << "     Number of active cells: " << m_triangulation.n_active_cells()
-                        << std::endl
-                        << "     Total number of cells: " << m_triangulation.n_cells()
-                        << std::endl;
 }
 
 void PoissonGrid::needles_remove_cells()
@@ -146,6 +192,23 @@ void PoissonGrid::transform_needle(double initial_bottom_needle_height,
         },
         m_triangulation
     );
+
+    /*
+    std::map<unsigned int, Point<2>> border_move;
+
+
+    for (auto face = m_triangulation.begin_active(); face != m_triangulation.end(); ++face)
+    {
+        for (unsigned int i=0; i < GeometryInfo<2>::vertices_per_face; i++)
+        {
+            unsigned int ind = face->vertex_index(i);
+            Point<2> position = m_triangulation.get_vertices()[ind];
+            auto new_position = transformation_func(position);
+
+            border_move[ind] = new_position;
+        }
+    }
+    GridTools::laplace_transform(border_move, m_triangulation);*/
 }
 
 dealii::Triangulation<2>& PoissonGrid::triangulation()
@@ -171,7 +234,11 @@ PoissonGrid::NeedleTransform::NeedleTransform(
 
 dealii::Point<2> PoissonGrid::NeedleTransform::operator()(const dealii::Point<2>& p)
 {
-    double r = m_coeff * pow(p(0), m_gamma);
+    double r = p(0);
+    if (r > m_cell_size)
+        r = m_coeff * pow(p(0), m_gamma);
+    else
+        r *= m_area_conf.needle_radius / m_cell_size;
     double z = p(1);
     if (r < m_area_conf.needle_radius)
     {
@@ -191,6 +258,35 @@ dealii::Point<2> PoissonGrid::NeedleTransform::operator()(const dealii::Point<2>
             double dz_fixed = dz_current * vertical_space_fixed / vertical_space_orig;
             z = m_h_2 + dz_fixed;
         }
+    }
+
+    // Fixing shape
+    double rho = sqrt(pow(r, 2) + pow(z - m_area_conf.bottom_needle_size, 2) );
+    double dist_to_needle = rho - m_area_conf.needle_radius;
+    double dist_to_needle_limit = 4 * m_area_conf.needle_radius;
+
+    if (z < m_h_2 && z > m_area_conf.bottom_needle_size && dist_to_needle > 0.0)
+    {
+        if (dist_to_needle > dist_to_needle_limit)
+            dist_to_needle = dist_to_needle_limit;
+        /*
+        double r_factor = 1 - r / (4 * m_area_conf.needle_radius);
+        if (r_factor < 0.0)
+            r_factor = 0.0;
+
+
+
+
+        if (dist_to_needle > 4 * m_area_conf.needle_radius)
+            dist_to_needle = 4 * m_area_conf.needle_radius;
+
+        if (dist_to_needle > 0) // && rho < 4 * m_area_conf.needle_radius)
+        {
+            double rho_factor = dist_to_needle / (2 * m_area_conf.needle_radius);
+            rho_factor = rho_factor > 1.0 ? 1.0 : rho_factor;
+
+            r += r_factor * dist_to_needle * rho_factor * r * 2;
+        }*/
     }
 
     return Point<2>(r, z);

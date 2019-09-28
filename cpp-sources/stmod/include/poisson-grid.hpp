@@ -4,6 +4,7 @@
 #include <deal.II/grid/tria.h>
 #include <deal.II/grid/grid_generator.h>
 
+
 class AreaConfig
 {
 public:
@@ -17,6 +18,12 @@ public:
 
     unsigned int initial_refine = 3;
     unsigned int rect_needle_refine = 2;
+};
+
+class BoundaryAssigner
+{
+public:
+    static void assign_boundary_ids(dealii::Triangulation<2>& tria);
 };
 
 class PoissonGrid
