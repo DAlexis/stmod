@@ -52,7 +52,16 @@ int main()
     BoundaryAssigner::assign_boundary_ids(triangulation);
     PoissonSolver poisson_solver(triangulation);
     poisson_solver.solve();
-    poisson_solver.output("solution-2d.vtk");
+    poisson_solver.output("solution-2d-1.vtk");
+
+    poisson_solver.refine_grid();
+    poisson_solver.solve();
+    poisson_solver.output("solution-2d-2.vtk");
+
+
+    poisson_solver.refine_grid();
+    poisson_solver.solve();
+    poisson_solver.output("solution-2d-3.vtk");
 
     return 0;
 }

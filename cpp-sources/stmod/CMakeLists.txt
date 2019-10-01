@@ -11,14 +11,12 @@ set(LIB_SOURCE
     ${PROJECT_SOURCE_DIR}/src/utils.cpp
     ${PROJECT_SOURCE_DIR}/src/poisson-solver.cpp
     ${PROJECT_SOURCE_DIR}/src/poisson-grid.cpp
-    ${PROJECT_SOURCE_DIR}/src/grid-utils.cpp
 )
 
 set(LIB_HPP
     ${PROJECT_SOURCE_DIR}/include/utils.hpp
     ${PROJECT_SOURCE_DIR}/include/poisson-solver.hpp
     ${PROJECT_SOURCE_DIR}/include/poisson-grid.hpp
-    ${PROJECT_SOURCE_DIR}/include/grid-utils.hpp
 )
 
 # Include dirs that are used and will be exported 
