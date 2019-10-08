@@ -103,18 +103,6 @@ void PoissonSolver::setup_system()
                                   /*keep_constrained_dofs = */ false);
     sparsity_pattern.copy_from(dsp);
     system_matrix.reinit(sparsity_pattern);
-    /*
-    dof_handler.distribute_dofs(fe);
-    std::cout << "     Number of degrees of freedom: " << dof_handler.n_dofs()
-                        << std::endl;
-    DynamicSparsityPattern dsp(dof_handler.n_dofs());
-    DoFTools::make_sparsity_pattern(dof_handler, dsp);
-    sparsity_pattern.copy_from(dsp);
-    system_matrix.reinit(sparsity_pattern);
-    solution.reinit(dof_handler.n_dofs());
-
-
-    system_rhs.reinit(dof_handler.n_dofs());*/
 }
 
 void PoissonSolver::assemble_system()
@@ -132,35 +120,35 @@ void PoissonSolver::assemble_system()
     std::vector<types::global_dof_index> local_dof_indices(dofs_per_cell);
     for (const auto &cell : dof_handler.active_cell_iterators())
     {
-      cell_matrix = 0;
-      cell_rhs    = 0;
-      fe_values.reinit(cell);
-      for (unsigned int q_index = 0; q_index < n_q_points; ++q_index)
+        cell_matrix = 0;
+        cell_rhs    = 0;
+        fe_values.reinit(cell);
+        for (unsigned int q_index = 0; q_index < n_q_points; ++q_index)
         {
-          const auto x_q = fe_values.quadrature_point(q_index);
-          const double r = x_q[0];
-          for (unsigned int i = 0; i < dofs_per_cell; ++i)
+            const auto x_q = fe_values.quadrature_point(q_index);
+            const double r = x_q[0];
+            std::cout << "r = " << r << std::endl;
+            for (unsigned int i = 0; i < dofs_per_cell; ++i)
             {
-              for (unsigned int j = 0; j < dofs_per_cell; ++j)
-              {
-                  cell_matrix(i, j) += (
-                      fe_values.shape_grad(i, q_index) * // grad phi_i(x_q)
-                      fe_values.shape_grad(j, q_index) * // grad phi_j(x_q)
-                      r *                                // r
-                      fe_values.JxW(q_index)             // dx
-                  );
-              }
-              cell_rhs(i) += (
+                for (unsigned int j = 0; j < dofs_per_cell; ++j)
+                {
+                    cell_matrix(i, j) += (
+                        fe_values.shape_grad(i, q_index) * // grad phi_i(x_q)
+                        fe_values.shape_grad(j, q_index) * // grad phi_j(x_q)
+                        r *                                // r
+                        fe_values.JxW(q_index)             // dx
+                    );
+                }
+                cell_rhs(i) += (
                   fe_values.shape_value(i, q_index) * // phi_i(x_q)
                   right_hand_side.value(x_q) *        // f(x_q)
                   r *                                 // r
                   fe_values.JxW(q_index)              // dx
-              );
+                );
             }
         }
-      cell->get_dof_indices(local_dof_indices);
-      constraints.distribute_local_to_global(
-        cell_matrix, cell_rhs, local_dof_indices, system_matrix, system_rhs);
+        cell->get_dof_indices(local_dof_indices);
+        constraints.distribute_local_to_global(cell_matrix, cell_rhs, local_dof_indices, system_matrix, system_rhs);
     }
 }
 
