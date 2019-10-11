@@ -5,12 +5,18 @@
 
 #include <vector>
 
+/**
+ * @brief The FESampler class produce calculation of coordinates, gradients and laplacians
+ * at __support points__ for given finite element solution
+ *
+ */
 class FESampler
 {
 public:
     FESampler(const dealii::DoFHandler<2>& dof_handler);
 
     void sample(dealii::Vector<double> solution);
+
     const std::vector<dealii::Point<2>>& points();
     const std::vector<double>&           values();
     const std::vector<dealii::Point<2>>& gradients();

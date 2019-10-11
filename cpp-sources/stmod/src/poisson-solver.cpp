@@ -66,13 +66,13 @@ double BoundaryValues::value(const Point<2> &p,
     return p.square();
 }
 
-PoissonSolver::PoissonSolver(dealii::Triangulation<2>& initial_triangulation)
-    : m_triangulation(initial_triangulation), fe(2), m_dof_handler(m_triangulation)
+PoissonSolver::PoissonSolver(dealii::Triangulation<2>& initial_triangulation, unsigned int polynomial_degree)
+    : m_triangulation(initial_triangulation), m_fe(polynomial_degree), m_dof_handler(m_triangulation)
 {}
 
 void PoissonSolver::setup_system()
 {
-    m_dof_handler.distribute_dofs(fe);
+    m_dof_handler.distribute_dofs(m_fe);
     m_solution.reinit(m_dof_handler.n_dofs());
     system_rhs.reinit(m_dof_handler.n_dofs());
     constraints.clear();
@@ -101,19 +101,19 @@ void PoissonSolver::setup_system()
                                   dsp,
                                   constraints,
                                   /*keep_constrained_dofs = */ false);
-    sparsity_pattern.copy_from(dsp);
-    system_matrix.reinit(sparsity_pattern);
+    m_sparsity_pattern.copy_from(dsp);
+    m_system_matrix.reinit(m_sparsity_pattern);
 }
 
 void PoissonSolver::assemble_system()
 {
     const RightHandSide right_hand_side;
 
-    const QGauss<2> quadrature_formula(fe.degree + 1);
-    FEValues<2> fe_values(fe, quadrature_formula,
+    const QGauss<2> quadrature_formula(m_fe.degree + 1);
+    FEValues<2> fe_values(m_fe, quadrature_formula,
                           update_values | update_gradients |
                           update_quadrature_points | update_JxW_values);
-    const unsigned int dofs_per_cell = fe.dofs_per_cell;
+    const unsigned int dofs_per_cell = m_fe.dofs_per_cell;
     const unsigned int n_q_points    = quadrature_formula.size();
     FullMatrix<double> cell_matrix(dofs_per_cell, dofs_per_cell);
     Vector<double>     cell_rhs(dofs_per_cell);
@@ -147,7 +147,7 @@ void PoissonSolver::assemble_system()
             }
         }
         cell->get_dof_indices(local_dof_indices);
-        constraints.distribute_local_to_global(cell_matrix, cell_rhs, local_dof_indices, system_matrix, system_rhs);
+        constraints.distribute_local_to_global(cell_matrix, cell_rhs, local_dof_indices, m_system_matrix, system_rhs);
     }
 }
 
@@ -155,7 +155,7 @@ void PoissonSolver::solve_lin_eq()
 {
     SolverControl solver_control(2000, 1e-12);
     SolverCG<>        solver(solver_control);
-    solver.solve(system_matrix, m_solution, system_rhs, PreconditionIdentity());
+    solver.solve(m_system_matrix, m_solution, system_rhs, PreconditionIdentity());
     std::cout << "     " << solver_control.last_step()
                         << " CG iterations needed to obtain convergence." << std::endl;
     constraints.distribute(m_solution);
@@ -166,7 +166,7 @@ void PoissonSolver::refine_grid()
     Vector<float> estimated_error_per_cell(m_triangulation.n_active_cells());
     KellyErrorEstimator<2>::estimate(
         m_dof_handler,
-        QGauss<2 - 1>(fe.degree + 1),
+        QGauss<2 - 1>(m_fe.degree + 1),
         std::map<types::boundary_id, const Function<2> *>(),
         m_solution,
         estimated_error_per_cell);
@@ -191,6 +191,11 @@ const dealii::DoFHandler<2>& PoissonSolver::dof_handler() const
 const dealii::Vector<double> PoissonSolver::solution()
 {
     return m_solution;
+}
+
+unsigned int PoissonSolver::polynomial_degree()
+{
+    return m_fe.degree;
 }
 
 void PoissonSolver::output(const std::string& filename) const

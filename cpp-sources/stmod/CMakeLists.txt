@@ -12,6 +12,7 @@ set(LIB_SOURCE
     ${PROJECT_SOURCE_DIR}/src/poisson-solver.cpp
     ${PROJECT_SOURCE_DIR}/src/poisson-grid.cpp
     ${PROJECT_SOURCE_DIR}/src/fe-sampler.cpp
+    ${PROJECT_SOURCE_DIR}/src/field-output.cpp
 )
 
 set(LIB_HPP
@@ -19,6 +20,7 @@ set(LIB_HPP
     ${PROJECT_SOURCE_DIR}/include/poisson-solver.hpp
     ${PROJECT_SOURCE_DIR}/include/poisson-grid.hpp
     ${PROJECT_SOURCE_DIR}/include/fe-sampler.hpp
+    ${PROJECT_SOURCE_DIR}/include/field-output.hpp
 )
 
 # Include dirs that are used and will be exported 

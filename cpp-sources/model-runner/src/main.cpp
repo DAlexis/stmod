@@ -19,6 +19,7 @@
 #include "include/poisson-grid.hpp"
 #include "include/poisson-solver.hpp"
 #include "include/fe-sampler.hpp"
+#include "include/field-output.hpp"
 
 #include <deal.II/grid/tria.h>
 #include <deal.II/grid/tria_accessor.h>
@@ -70,28 +71,9 @@ int main()
             cout << "vals[i] != sol[i] at i = " << i << " where vals[i] = " << vals[i]  << "and sol[i] = " << sol[i] << endl;
     }
 
-    dealii::DataOut<2> data_out;
-    data_out.attach_dof_handler(poisson_solver.dof_handler());
-    //dealii::Vector<Point<2>> v(sampler.gradients());
-
-
-    std::vector<std::string> solution_names;
-    solution_names.push_back ("GradX");
-    solution_names.push_back ("GradY");
-
-    std::vector<DataComponentInterpretation::DataComponentInterpretation>
-            data_component_interpretation (2, DataComponentInterpretation::component_is_part_of_vector);
-    dealii::Vector<double> tmp(sampler.gradients().size() * 2);
-    for (size_t i = 0; i<sampler.gradients().size(); i++)
-    {
-        tmp[2*i] = sampler.gradients()[i][0];
-        tmp[2*i + 1] = sampler.gradients()[i][1];
-    }
-
-    data_out.add_data_vector(tmp, solution_names, DataOut<2>::type_dof_data, data_component_interpretation); //(sampler.gradients(), "gradients_calculated");
-    data_out.build_patches();
-    std::ofstream output("gradients.vtk");
-    data_out.write_vtk(output);
+    VectorOutputMaker vector_out_maker(poisson_solver.triangulation(), poisson_solver.polynomial_degree());
+    vector_out_maker.set_vector(sampler.gradients(), {"Ex", "Ey"});
+    vector_out_maker.output("gradients-test.vtk");
 
 /*
     poisson_solver.refine_grid();

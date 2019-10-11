@@ -13,7 +13,7 @@
 class PoissonSolver
 {
 public:
-    PoissonSolver(dealii::Triangulation<2>& initial_triangulation);
+    PoissonSolver(dealii::Triangulation<2>& initial_triangulation, unsigned int polynomial_degree = 2);
 
     void solve();
     void output(const std::string& filename) const;
@@ -22,6 +22,8 @@ public:
     const dealii::DoFHandler<2>& dof_handler() const;
 
     const dealii::Vector<double> solution();
+
+    unsigned int polynomial_degree();
 
 private:
     void setup_system();
@@ -32,10 +34,10 @@ private:
     dealii::Triangulation<2>& m_triangulation;
     dealii::AffineConstraints<double> constraints;
 
-    dealii::FE_Q<2>                    fe;
-    dealii::DoFHandler<2>        m_dof_handler;
-    dealii::SparsityPattern            sparsity_pattern;
-    dealii::SparseMatrix<double> system_matrix;
+    dealii::FE_Q<2>        m_fe;
+    dealii::DoFHandler<2>  m_dof_handler;
+    dealii::SparsityPattern  m_sparsity_pattern;
+    dealii::SparseMatrix<double> m_system_matrix;
     dealii::Vector<double> m_solution;
     dealii::Vector<double> system_rhs;
 
