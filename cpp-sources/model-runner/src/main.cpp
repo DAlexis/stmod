@@ -18,6 +18,7 @@
 
 #include "include/poisson-grid.hpp"
 #include "include/poisson-solver.hpp"
+#include "include/fe-sampler.hpp"
 
 #include <deal.II/grid/tria.h>
 #include <deal.II/grid/tria_accessor.h>
@@ -27,8 +28,11 @@
 #include <deal.II/grid/manifold_lib.h>
 #include <deal.II/grid/grid_out.h>
 #include <deal.II/grid/grid_in.h>
+#include <deal.II/numerics/data_out.h>
 
 #include <iostream>
+#include <fstream>
+#include <cmath>
 #include <fstream>
 
 using namespace dealii;
@@ -54,6 +58,42 @@ int main()
     poisson_solver.solve();
     poisson_solver.output("solution-2d-1.vtk");
 
+    FESampler sampler(poisson_solver.dof_handler());
+
+    auto sol = poisson_solver.solution();
+    sampler.sample(sol);
+    auto vals = sampler.values();
+    for (size_t i=0; i < vals.size(); i++)
+    {
+        cout << "lap[" << i << "] = " << sampler.laplacians()[i] << endl;
+        if (fabs(vals[i] - sol[i]) > 1e-4)
+            cout << "vals[i] != sol[i] at i = " << i << " where vals[i] = " << vals[i]  << "and sol[i] = " << sol[i] << endl;
+    }
+
+    dealii::DataOut<2> data_out;
+    data_out.attach_dof_handler(poisson_solver.dof_handler());
+    //dealii::Vector<Point<2>> v(sampler.gradients());
+
+
+    std::vector<std::string> solution_names;
+    solution_names.push_back ("GradX");
+    solution_names.push_back ("GradY");
+
+    std::vector<DataComponentInterpretation::DataComponentInterpretation>
+            data_component_interpretation (2, DataComponentInterpretation::component_is_part_of_vector);
+    dealii::Vector<double> tmp(sampler.gradients().size() * 2);
+    for (size_t i = 0; i<sampler.gradients().size(); i++)
+    {
+        tmp[2*i] = sampler.gradients()[i][0];
+        tmp[2*i + 1] = sampler.gradients()[i][1];
+    }
+
+    data_out.add_data_vector(tmp, solution_names, DataOut<2>::type_dof_data, data_component_interpretation); //(sampler.gradients(), "gradients_calculated");
+    data_out.build_patches();
+    std::ofstream output("gradients.vtk");
+    data_out.write_vtk(output);
+
+/*
     poisson_solver.refine_grid();
     poisson_solver.solve();
     poisson_solver.output("solution-2d-2.vtk");
@@ -62,6 +102,6 @@ int main()
     poisson_solver.refine_grid();
     poisson_solver.solve();
     poisson_solver.output("solution-2d-3.vtk");
-
+*/
     return 0;
 }

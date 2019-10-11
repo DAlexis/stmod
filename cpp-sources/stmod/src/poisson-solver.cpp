@@ -67,37 +67,37 @@ double BoundaryValues::value(const Point<2> &p,
 }
 
 PoissonSolver::PoissonSolver(dealii::Triangulation<2>& initial_triangulation)
-    : triangulation(initial_triangulation), fe(1), dof_handler(triangulation)
+    : m_triangulation(initial_triangulation), fe(2), m_dof_handler(m_triangulation)
 {}
 
 void PoissonSolver::setup_system()
 {
-    dof_handler.distribute_dofs(fe);
-    solution.reinit(dof_handler.n_dofs());
-    system_rhs.reinit(dof_handler.n_dofs());
+    m_dof_handler.distribute_dofs(fe);
+    m_solution.reinit(m_dof_handler.n_dofs());
+    system_rhs.reinit(m_dof_handler.n_dofs());
     constraints.clear();
-    DoFTools::make_hanging_node_constraints(dof_handler, constraints);
+    DoFTools::make_hanging_node_constraints(m_dof_handler, constraints);
 
     double phi_0 = 0.123;
     double phi_L = 10.321;
 
     VectorTools::interpolate_boundary_values(
-        dof_handler,
+        m_dof_handler,
         1,
         Functions::ConstantFunction<2>(phi_0),
         constraints
     );
 
     VectorTools::interpolate_boundary_values(
-        dof_handler,
+        m_dof_handler,
         2,
         Functions::ConstantFunction<2>(phi_L),
         constraints
     );
 
     constraints.close();
-    DynamicSparsityPattern dsp(dof_handler.n_dofs());
-    DoFTools::make_sparsity_pattern(dof_handler,
+    DynamicSparsityPattern dsp(m_dof_handler.n_dofs());
+    DoFTools::make_sparsity_pattern(m_dof_handler,
                                   dsp,
                                   constraints,
                                   /*keep_constrained_dofs = */ false);
@@ -118,7 +118,7 @@ void PoissonSolver::assemble_system()
     FullMatrix<double> cell_matrix(dofs_per_cell, dofs_per_cell);
     Vector<double>     cell_rhs(dofs_per_cell);
     std::vector<types::global_dof_index> local_dof_indices(dofs_per_cell);
-    for (const auto &cell : dof_handler.active_cell_iterators())
+    for (const auto &cell : m_dof_handler.active_cell_iterators())
     {
         cell_matrix = 0;
         cell_rhs    = 0;
@@ -127,7 +127,6 @@ void PoissonSolver::assemble_system()
         {
             const auto x_q = fe_values.quadrature_point(q_index);
             const double r = x_q[0];
-            std::cout << "r = " << r << std::endl;
             for (unsigned int i = 0; i < dofs_per_cell; ++i)
             {
                 for (unsigned int j = 0; j < dofs_per_cell; ++j)
@@ -154,35 +153,51 @@ void PoissonSolver::assemble_system()
 
 void PoissonSolver::solve_lin_eq()
 {
-    SolverControl solver_control(1500, 1e-12);
+    SolverControl solver_control(2000, 1e-12);
     SolverCG<>        solver(solver_control);
-    solver.solve(system_matrix, solution, system_rhs, PreconditionIdentity());
+    solver.solve(system_matrix, m_solution, system_rhs, PreconditionIdentity());
     std::cout << "     " << solver_control.last_step()
                         << " CG iterations needed to obtain convergence." << std::endl;
-    constraints.distribute(solution);
+    constraints.distribute(m_solution);
 }
 
 void PoissonSolver::refine_grid()
 {
-    Vector<float> estimated_error_per_cell(triangulation.n_active_cells());
+    Vector<float> estimated_error_per_cell(m_triangulation.n_active_cells());
     KellyErrorEstimator<2>::estimate(
-        dof_handler,
+        m_dof_handler,
         QGauss<2 - 1>(fe.degree + 1),
         std::map<types::boundary_id, const Function<2> *>(),
-        solution,
+        m_solution,
         estimated_error_per_cell);
-    GridRefinement::refine_and_coarsen_fixed_number(triangulation,
+    GridRefinement::refine_and_coarsen_fixed_number(m_triangulation,
                                                       estimated_error_per_cell,
                                                       0.3,
                                                       0.03);
-    triangulation.execute_coarsening_and_refinement();
+    m_triangulation.execute_coarsening_and_refinement();
+}
+
+
+dealii::Triangulation<2>& PoissonSolver::triangulation()
+{
+    return m_triangulation;
+}
+
+const dealii::DoFHandler<2>& PoissonSolver::dof_handler() const
+{
+    return m_dof_handler;
+}
+
+const dealii::Vector<double> PoissonSolver::solution()
+{
+    return m_solution;
 }
 
 void PoissonSolver::output(const std::string& filename) const
 {
     DataOut<2> data_out;
-    data_out.attach_dof_handler(dof_handler);
-    data_out.add_data_vector(solution, "solution");
+    data_out.attach_dof_handler(m_dof_handler);
+    data_out.add_data_vector(m_solution, "solution");
     data_out.build_patches();
     std::ofstream output(filename.c_str());
     data_out.write_vtk(output);
