@@ -59,16 +59,25 @@ int main()
     poisson_solver.solve();
     poisson_solver.output("solution-2d-1.vtk");
 
-    FESampler sampler(poisson_solver.dof_handler());
+
 
     auto sol = poisson_solver.solution();
-    sampler.sample(sol);
+    std::vector<dealii::Vector<double>> old_sol;
+    old_sol.push_back(sol);
+
+    poisson_solver.estimate_error();
+    std::vector<dealii::Vector<double>> interpolated_sol;
+    auto refined_solution = poisson_solver.refine_and_coarsen_grid(old_sol);
+
+
+
+    FESampler sampler(poisson_solver.dof_handler());
+
+    sampler.sample(refined_solution[0]);
     auto vals = sampler.values();
     for (size_t i=0; i < vals.size(); i++)
     {
         cout << "lap[" << i << "] = " << sampler.laplacians()[i] << endl;
-        if (fabs(vals[i] - sol[i]) > 1e-4)
-            cout << "vals[i] != sol[i] at i = " << i << " where vals[i] = " << vals[i]  << "and sol[i] = " << sol[i] << endl;
     }
 
     VectorOutputMaker vector_out_maker(poisson_solver.triangulation(), poisson_solver.polynomial_degree());
@@ -76,12 +85,14 @@ int main()
     vector_out_maker.output("gradients-test.vtk");
 
 /*
-    poisson_solver.refine_grid();
+    poisson_solver.estimate_error();
+    poisson_solver.refine_and_coarsen_grid();
     poisson_solver.solve();
     poisson_solver.output("solution-2d-2.vtk");
 
 
-    poisson_solver.refine_grid();
+    poisson_solver.estimate_error();
+    poisson_solver.refine_and_coarsen_grid();
     poisson_solver.solve();
     poisson_solver.output("solution-2d-3.vtk");
 */

@@ -7,8 +7,16 @@
 #include <deal.II/lac/dynamic_sparsity_pattern.h>
 #include <deal.II/lac/sparse_matrix.h>
 #include <deal.II/lac/affine_constraints.h>
+#include <deal.II/numerics/solution_transfer.h>
 
 #include <string>
+
+class SolutionsStorage
+{
+public:
+
+private:
+};
 
 class PoissonSolver
 {
@@ -17,7 +25,8 @@ public:
 
     void solve();
     void output(const std::string& filename) const;
-    void refine_grid();
+    void estimate_error();
+    const std::vector<dealii::Vector<double>>& refine_and_coarsen_grid(const std::vector<dealii::Vector<double>>& solutions_to_interpolate);
     dealii::Triangulation<2>& triangulation();
     const dealii::DoFHandler<2>& dof_handler() const;
 
@@ -39,7 +48,10 @@ private:
     dealii::SparsityPattern  m_sparsity_pattern;
     dealii::SparseMatrix<double> m_system_matrix;
     dealii::Vector<double> m_solution;
-    dealii::Vector<double> system_rhs;
+    dealii::Vector<double> m_system_rhs;
+    dealii::Vector<float>  m_estimated_error_per_cell;
+
+    std::vector<dealii::Vector<double>> m_solutions_interpolated;
 
     double phi_0 = 0;
     double pli_L = 1;

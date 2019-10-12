@@ -74,7 +74,7 @@ void PoissonSolver::setup_system()
 {
     m_dof_handler.distribute_dofs(m_fe);
     m_solution.reinit(m_dof_handler.n_dofs());
-    system_rhs.reinit(m_dof_handler.n_dofs());
+    m_system_rhs.reinit(m_dof_handler.n_dofs());
     constraints.clear();
     DoFTools::make_hanging_node_constraints(m_dof_handler, constraints);
 
@@ -147,7 +147,7 @@ void PoissonSolver::assemble_system()
             }
         }
         cell->get_dof_indices(local_dof_indices);
-        constraints.distribute_local_to_global(cell_matrix, cell_rhs, local_dof_indices, m_system_matrix, system_rhs);
+        constraints.distribute_local_to_global(cell_matrix, cell_rhs, local_dof_indices, m_system_matrix, m_system_rhs);
     }
 }
 
@@ -155,26 +155,59 @@ void PoissonSolver::solve_lin_eq()
 {
     SolverControl solver_control(2000, 1e-12);
     SolverCG<>        solver(solver_control);
-    solver.solve(m_system_matrix, m_solution, system_rhs, PreconditionIdentity());
+    solver.solve(m_system_matrix, m_solution, m_system_rhs, PreconditionIdentity());
     std::cout << "     " << solver_control.last_step()
                         << " CG iterations needed to obtain convergence." << std::endl;
     constraints.distribute(m_solution);
 }
 
-void PoissonSolver::refine_grid()
+void PoissonSolver::estimate_error()
 {
-    Vector<float> estimated_error_per_cell(m_triangulation.n_active_cells());
+    m_estimated_error_per_cell.reinit(m_triangulation.n_active_cells());
     KellyErrorEstimator<2>::estimate(
         m_dof_handler,
         QGauss<2 - 1>(m_fe.degree + 1),
         std::map<types::boundary_id, const Function<2> *>(),
         m_solution,
-        estimated_error_per_cell);
+        m_estimated_error_per_cell);
+}
+
+const std::vector<dealii::Vector<double>>& PoissonSolver::refine_and_coarsen_grid(const std::vector<dealii::Vector<double>>& solutions_to_interpolate)
+{
+    const size_t solutions_count = solutions_to_interpolate.size();
+
+    dealii::SolutionTransfer<2> soltution_transfer(m_dof_handler);
+    // flag some cells for refinement and coarsening, e.g.
     GridRefinement::refine_and_coarsen_fixed_number(m_triangulation,
-                                                      estimated_error_per_cell,
+                                                      m_estimated_error_per_cell,
                                                       0.3,
                                                       0.03);
+    // prepare the triangulation,
+    m_triangulation.prepare_coarsening_and_refinement();
+
+    // prepare the SolutionTransfer object for coarsening and refinement and give
+    // the solution vector that we intend to interpolate later,
+
+    std::vector<dealii::Vector<double>> qq;
+    soltution_transfer.prepare_for_coarsening_and_refinement(solutions_to_interpolate);
+
+    // actually execute the refinement,
     m_triangulation.execute_coarsening_and_refinement();
+
+    // redistribute dofs,
+    m_dof_handler.distribute_dofs(m_fe);
+    const unsigned int new_n_dofs = m_dof_handler.n_dofs();
+
+    m_solutions_interpolated.clear();
+    m_solutions_interpolated.resize(solutions_count);
+    for (auto &it : m_solutions_interpolated)
+    {
+        it.reinit(new_n_dofs);
+    }
+
+    // and interpolate the solution
+    soltution_transfer.interpolate(solutions_to_interpolate, m_solutions_interpolated);
+    return m_solutions_interpolated;
 }
 
 

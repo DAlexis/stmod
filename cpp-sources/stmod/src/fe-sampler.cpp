@@ -4,41 +4,47 @@
 #include <deal.II/fe/fe_q.h>
 #include <deal.II/fe/fe_values.h>
 
+#include <stdexcept>
+
 using namespace dealii;
 
 FESampler::FESampler(const dealii::DoFHandler<2>& dof_handler) :
-    m_dof_handler(dof_handler)
+    m_dof_handler(dof_handler),
+    m_fe(m_dof_handler.get_fe()),
+    m_support_points(m_fe.get_generalized_support_points()),
+    m_quad(m_support_points),
+    m_n_dofs(m_dof_handler.n_dofs())
 {
+    init_vectors();
+    generate_points();
+}
+
+void FESampler::init_vectors()
+{
+    m_points.resize(m_n_dofs);
+    m_values.resize(m_n_dofs);
+    m_gradients.resize(m_n_dofs);
+    m_laplacians.resize(m_n_dofs);
 }
 
 void FESampler::sample(dealii::Vector<double> solution)
 {
-    const auto& fe = m_dof_handler.get_fe();
+    if (m_n_dofs != solution.size())
+    {
+        throw std::range_error("FESampler::sample: m_dof_handler.n_dofs() != solution.size()");
+    }
 
-    // No No No No // USE 'Support poiunts' instead!
-
-
-    const std::vector< Point< 2 > > &support_points = fe.get_generalized_support_points();
-
-    //Point<2> p(0.0, 0.0); // Point in [0,1]x[0,1] space
-    Quadrature<2> quad(support_points); // Can be used like i.e. QGauss. It is a storage for points
-
-    FEValues<2> fe_values(fe, quad,
-                          update_values | update_gradients | update_hessians |
+    FEValues<2> fe_values(m_fe, m_quad, update_values |
+                          update_gradients | update_hessians |
                           update_quadrature_points);
 
-    const unsigned int dofs_per_cell = fe.dofs_per_cell;
-    const unsigned int n_q_points    = quad.size();
+    const unsigned int dofs_per_cell = m_fe.dofs_per_cell;
+    const unsigned int n_q_points    = m_quad.size();
 
     if (dofs_per_cell != n_q_points)
         throw std::runtime_error("Something goes wrong, dofs_per_cell != n_q_points when quadrature points are support points");
 
     std::vector<types::global_dof_index> local_dof_indices(dofs_per_cell);
-
-    m_points.resize(solution.size());
-    m_values.resize(solution.size());
-    m_gradients.resize(solution.size());
-    m_laplacians.resize(solution.size());
 
     for (const auto &cell : m_dof_handler.active_cell_iterators())
     {
@@ -49,8 +55,6 @@ void FESampler::sample(dealii::Vector<double> solution)
         {
             const unsigned int current_dof_index = local_dof_indices[i];
             const double solution_component = solution[current_dof_index];
-            const auto point = fe_values.quadrature_point(i);
-            m_points[current_dof_index] = point;
 
             // Only one shape func is non-zero on this point, so we do not need iterating along n_q_points
             double shape_value = solution_component * fe_values.shape_value(i, i);
@@ -70,7 +74,6 @@ void FESampler::sample(dealii::Vector<double> solution)
             }
 
         }
-        //constraints.distribute_local_to_global(cell_matrix, cell_rhs, local_dof_indices, system_matrix, system_rhs);
     }
 }
 
@@ -92,4 +95,30 @@ const std::vector<dealii::Point<2>>& FESampler::gradients()
 const std::vector<double>& FESampler::laplacians()
 {
     return m_laplacians;
+}
+
+void FESampler::generate_points()
+{
+    FEValues<2> fe_values(m_fe, m_quad, update_quadrature_points);
+
+    const unsigned int dofs_per_cell = m_fe.dofs_per_cell;
+    const unsigned int n_q_points    = m_quad.size();
+
+    if (dofs_per_cell != n_q_points)
+        throw std::runtime_error("Something goes wrong, dofs_per_cell != n_q_points when quadrature points are support points");
+
+    std::vector<types::global_dof_index> local_dof_indices(dofs_per_cell);
+
+    for (const auto &cell : m_dof_handler.active_cell_iterators())
+    {
+        fe_values.reinit(cell);
+        cell->get_dof_indices(local_dof_indices);
+
+        for (unsigned int i = 0; i < dofs_per_cell; ++i)
+        {
+            const unsigned int current_dof_index = local_dof_indices[i];
+            const auto point = fe_values.quadrature_point(i);
+            m_points[current_dof_index] = point;
+        }
+    }
 }

@@ -10,10 +10,20 @@ Poisson equation solver on axially symmetric geometry.
 
 
 ## Active tasks
-[X] Solution-like fields sampling with gradients and laplacians
+### Hi priority
+
+[x] Solution-like fields sampling with gradients and laplacians
+
 [x] Vector field output class from FESampler
+
+[x] Solution-like vector interpolation for refine <- Use SolutionTransfer class
+
 [ ] Scalar field output class
-[ ] Manifold ids for grid near the needle
-[ ] Laplacian output test
-[ ] Solution-like vector interpolation for refine
+
 [ ] Electrons emission possibility
+
+### Low priority
+
+[ ] Manifold ids for grid near the needle
+
+[ ] Laplacian output test

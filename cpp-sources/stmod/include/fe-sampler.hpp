@@ -2,6 +2,7 @@
 #define __FE_SAMPLER_HPP__
 
 #include <deal.II/dofs/dof_handler.h>
+#include <deal.II/base/quadrature.h>
 
 #include <vector>
 
@@ -23,7 +24,15 @@ public:
     const std::vector<double>&           laplacians();
 
 private:
+    void init_vectors();
+    void generate_points();
+
     const dealii::DoFHandler<2>& m_dof_handler;
+    const dealii::FiniteElement<2, 2> &m_fe;
+    const std::vector<dealii::Point<2>> &m_support_points;
+    const dealii::Quadrature<2> m_quad; // Can be used like i.e. QGauss. It is a storage for points
+    const unsigned int m_n_dofs;
+
     std::vector<dealii::Point<2>> m_points;
     std::vector<double> m_values;
     std::vector<dealii::Point<2>> m_gradients;
