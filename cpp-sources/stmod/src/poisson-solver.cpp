@@ -153,7 +153,7 @@ void PoissonSolver::assemble_system()
 
 void PoissonSolver::solve_lin_eq()
 {
-    SolverControl solver_control(2000, 1e-12);
+    SolverControl solver_control(4000, 1e-12);
     SolverCG<>        solver(solver_control);
     solver.solve(m_system_matrix, m_solution, m_system_rhs, PreconditionIdentity());
     std::cout << "     " << solver_control.last_step()

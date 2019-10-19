@@ -28,7 +28,7 @@
 #include <deal.II/grid/grid_tools.h>
 #include <deal.II/grid/manifold_lib.h>
 #include <deal.II/grid/grid_out.h>
-#include <deal.II/grid/grid_in.h>
+    #include <deal.II/grid/grid_in.h>
 #include <deal.II/numerics/data_out.h>
 
 #include <iostream>
@@ -41,21 +41,17 @@ using namespace std;
 
 int main()
 {
-    AreaConfig config;
-    PoissonGrid poisson_grid(config);
+    Grid grid;
+    grid.load_from_file(
+        "/home/dalexies/Projects/stmod/meshes/spheric-needles-1.geo",
+        "/home/dalexies/Projects/stmod/meshes/spheric-needles-1.msh"
+    );
 
-    Triangulation<2> triangulation;
-    GridIn<2> gridin;
-    gridin.attach_triangulation(triangulation);
-    std::ifstream f("/home/dalexies/Projects/stmod/meshes/spheric-needles-1.msh");
-    gridin.read_msh(f);
+    BoundaryAssigner boundary_assigner(grid);
 
-    cout << "Mesh reading done" << endl;
-
-    //poisson_grid.make_grid();
-    //PoissonSolver poisson_solver(poisson_grid.triangulation());
-    BoundaryAssigner::assign_boundary_ids(triangulation);
-    PoissonSolver poisson_solver(triangulation);
+    boundary_assigner.assign_boundary_ids();
+    //boundary_assigner.assign_manifold_ids();
+    PoissonSolver poisson_solver(grid.triangulation());
     poisson_solver.solve();
     poisson_solver.output("solution-2d-1.vtk");
 
@@ -84,6 +80,8 @@ int main()
     vector_out_maker.set_vector(sampler.gradients(), {"Ex", "Ey"});
     vector_out_maker.output("gradients-test.vtk");
 
+    poisson_solver.solve();
+    poisson_solver.output("solution-2d-2.vtk");
 /*
     poisson_solver.estimate_error();
     poisson_solver.refine_and_coarsen_grid();

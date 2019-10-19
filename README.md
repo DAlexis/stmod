@@ -24,6 +24,8 @@ Poisson equation solver on axially symmetric geometry.
 
 ### Low priority
 
-[ ] Manifold ids for grid near the needle
+[x] Manifold ids for grid near the needle
+
+[ ] Manifold ids for boundary -- ask Fedor
 
 [ ] Laplacian output test
