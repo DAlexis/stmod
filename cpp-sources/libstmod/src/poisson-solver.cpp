@@ -1,4 +1,4 @@
-#include "include/poisson-solver.hpp"
+#include "stmod/poisson-solver.hpp"
 
 #include <deal.II/grid/tria.h>
 #include <deal.II/dofs/dof_handler.h>

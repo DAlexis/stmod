@@ -1,3 +1,6 @@
 [submodule "cpp-sources/3rdparty/googletest"]
 	path = cpp-sources/3rdparty/googletest
 	url = https://github.com/google/googletest.git
+[submodule "cpp-sources/dsiterpp"]
+	path = cpp-sources/dsiterpp
+	url = git@github.com:DAlexis/dsiterpp.git

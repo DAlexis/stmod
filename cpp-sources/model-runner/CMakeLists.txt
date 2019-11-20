@@ -29,12 +29,5 @@ add_executable(${PROJECT_NAME} ${EXE_SOURCES})
 DEAL_II_SETUP_TARGET(${PROJECT_NAME})
 
 target_link_libraries (${PROJECT_NAME}
-    ${stmod_LIBRARY}
-    ${CMAKE_THREAD_LIBS_INIT}
-)
-
-# This is for unit tests
-export_include_dirs(
-    ${PROJECT_SOURCE_DIR}
-    ${${PROJECT_NAME}_USED_INCDIRS}
+    stmod
 )

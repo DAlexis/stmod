@@ -16,10 +16,10 @@
  * Author: Wolfgang Bangerth, University of Heidelberg, 1999
  */
 
-#include "include/poisson-grid.hpp"
-#include "include/poisson-solver.hpp"
-#include "include/fe-sampler.hpp"
-#include "include/field-output.hpp"
+#include "stmod/poisson-grid.hpp"
+#include "stmod/poisson-solver.hpp"
+#include "stmod/fe-sampler.hpp"
+#include "stmod/field-output.hpp"
 
 #include <deal.II/grid/tria.h>
 #include <deal.II/grid/tria_accessor.h>
@@ -28,7 +28,7 @@
 #include <deal.II/grid/grid_tools.h>
 #include <deal.II/grid/manifold_lib.h>
 #include <deal.II/grid/grid_out.h>
-    #include <deal.II/grid/grid_in.h>
+#include <deal.II/grid/grid_in.h>
 #include <deal.II/numerics/data_out.h>
 
 #include <iostream>

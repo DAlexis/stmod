@@ -1,4 +1,4 @@
-#include "include/fe-sampler.hpp"
+#include "stmod/fe-sampler.hpp"
 
 #include <deal.II/grid/tria.h>
 #include <deal.II/fe/fe_q.h>
