@@ -13,6 +13,7 @@ set(LIB_SOURCE
     ${PROJECT_SOURCE_DIR}/src/fe-sampler.cpp
     ${PROJECT_SOURCE_DIR}/src/field-output.cpp
     ${PROJECT_SOURCE_DIR}/src/fractions.cpp
+    ${PROJECT_SOURCE_DIR}/src/fractions-physics/e.cpp
 )
 
 set(LIB_HPP
@@ -22,6 +23,7 @@ set(LIB_HPP
     ${PROJECT_SOURCE_DIR}/stmod/fe-sampler.hpp
     ${PROJECT_SOURCE_DIR}/stmod/field-output.hpp
     ${PROJECT_SOURCE_DIR}/stmod/fractions.hpp
+    ${PROJECT_SOURCE_DIR}/stmod/fractions-physics/e.hpp
 )
 
 add_library(${PROJECT_NAME} STATIC ${LIB_SOURCE} ${LIB_HPP})
