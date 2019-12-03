@@ -20,6 +20,8 @@
 #include "stmod/poisson-solver.hpp"
 #include "stmod/fe-sampler.hpp"
 #include "stmod/field-output.hpp"
+#include "stmod/fractions.hpp"
+#include "stmod/fractions-physics/e.hpp"
 
 #include <deal.II/grid/tria.h>
 #include <deal.II/grid/tria_accessor.h>
@@ -48,14 +50,16 @@ int main()
     );
 
     BoundaryAssigner boundary_assigner(grid);
-
     boundary_assigner.assign_boundary_ids();
     //boundary_assigner.assign_manifold_ids();
     PoissonSolver poisson_solver(grid.triangulation());
     poisson_solver.solve();
     poisson_solver.output("solution-2d-1.vtk");
 
-
+    FractionsStorage frac_storage;
+    frac_storage.create_arrays(1, poisson_solver.solution().size());
+    ElectronsRHS electrons_rhs(frac_storage, 0, poisson_solver.solution(), poisson_solver.dof_handler());
+    electrons_rhs.calculate_rhs(0.0);
 
     auto sol = poisson_solver.solution();
     std::vector<dealii::Vector<double>> old_sol;

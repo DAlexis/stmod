@@ -25,10 +25,9 @@ public:
 
     void resize_interpolate(SolutionInterpolatorFunc interpolator);
 
-    std::vector<dealii::Vector<double>>& current();
-    std::vector<dealii::Vector<double>>& previous();
-    std::vector<dealii::Vector<double>>& delta();
-    std::vector<dealii::Vector<double>>& rhs();
+    const dealii::Vector<double>& current(size_t fraction_index);
+    const dealii::Vector<double>& previous(size_t fraction_index);
+    dealii::Vector<double>& rhs(size_t fraction_index);
 
 private:
     void reinit_additional_arrays();
@@ -48,8 +47,7 @@ public:
 
     size_t fraction_index();
 
-private:
-
+protected:
     FractionsStorage& m_storage;
     size_t m_fraction_index;
 };

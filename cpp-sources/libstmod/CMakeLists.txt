@@ -14,6 +14,7 @@ set(LIB_SOURCE
     ${PROJECT_SOURCE_DIR}/src/field-output.cpp
     ${PROJECT_SOURCE_DIR}/src/fractions.cpp
     ${PROJECT_SOURCE_DIR}/src/fractions-physics/e.cpp
+    ${PROJECT_SOURCE_DIR}/src/full-models/model-one.cpp
 )
 
 set(LIB_HPP
@@ -24,6 +25,7 @@ set(LIB_HPP
     ${PROJECT_SOURCE_DIR}/stmod/field-output.hpp
     ${PROJECT_SOURCE_DIR}/stmod/fractions.hpp
     ${PROJECT_SOURCE_DIR}/stmod/fractions-physics/e.hpp
+    ${PROJECT_SOURCE_DIR}/stmod/full-models/model-one.hpp
 )
 
 add_library(${PROJECT_NAME} STATIC ${LIB_SOURCE} ${LIB_HPP})

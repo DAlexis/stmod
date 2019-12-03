@@ -221,7 +221,7 @@ const dealii::DoFHandler<2>& PoissonSolver::dof_handler() const
     return m_dof_handler;
 }
 
-const dealii::Vector<double> PoissonSolver::solution()
+const dealii::Vector<double>& PoissonSolver::solution()
 {
     return m_solution;
 }

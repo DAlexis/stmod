@@ -30,7 +30,7 @@ public:
     dealii::Triangulation<2>& triangulation();
     const dealii::DoFHandler<2>& dof_handler() const;
 
-    const dealii::Vector<double> solution();
+    const dealii::Vector<double>& solution();
 
     unsigned int polynomial_degree();
 

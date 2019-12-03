@@ -85,26 +85,20 @@ void FractionsStorage::resize_interpolate(SolutionInterpolatorFunc interpolator)
     reinit_additional_arrays();
 }
 
-std::vector<dealii::Vector<double>>& FractionsStorage::current()
+const dealii::Vector<double>& FractionsStorage::current(size_t fraction_index)
 {
-    return m_current_value;
+    return m_current_value[fraction_index];
 }
 
-std::vector<dealii::Vector<double>>& FractionsStorage::previous()
+const dealii::Vector<double>& FractionsStorage::previous(size_t fraction_index)
 {
-    return m_previous_value;
+    return m_previous_value[fraction_index];
 }
 
-std::vector<dealii::Vector<double>>& FractionsStorage::delta()
+dealii::Vector<double>& FractionsStorage::rhs(size_t fraction_index)
 {
-    return m_delta;
+    return m_rhs[fraction_index];
 }
-
-std::vector<dealii::Vector<double>>& FractionsStorage::rhs()
-{
-    return m_rhs;
-}
-
 
 void FractionsStorage::create_arrays(size_t fractions_count, unsigned int dimension)
 {

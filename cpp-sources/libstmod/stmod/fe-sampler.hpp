@@ -14,9 +14,17 @@
 class FESampler
 {
 public:
+    enum class Targets : unsigned int
+    {
+        points = 0,
+        values = 1,
+        grad_lap = 2,
+        all = 3
+    };
+
     FESampler(const dealii::DoFHandler<2>& dof_handler);
 
-    void sample(dealii::Vector<double> solution);
+    void sample(dealii::Vector<double> solution, Targets targets = Targets::all);
 
     const std::vector<dealii::Point<2>>& points();
     const std::vector<double>&           values();
@@ -37,6 +45,8 @@ private:
     std::vector<double> m_values;
     std::vector<dealii::Point<2>> m_gradients;
     std::vector<double> m_laplacians;
+
+    Targets m_last_targets;
 
 };
 

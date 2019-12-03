@@ -27,7 +27,7 @@ void FESampler::init_vectors()
     m_laplacians.resize(m_n_dofs);
 }
 
-void FESampler::sample(dealii::Vector<double> solution)
+void FESampler::sample(dealii::Vector<double> solution, FESampler::Targets targets)
 {
     if (m_n_dofs != solution.size())
     {
@@ -51,6 +51,7 @@ void FESampler::sample(dealii::Vector<double> solution)
         fe_values.reinit(cell);
         cell->get_dof_indices(local_dof_indices);
 
+
         for (unsigned int i = 0; i < dofs_per_cell; ++i) // dofs_per_cell == number of support points, isn't it??
         {
             const unsigned int current_dof_index = local_dof_indices[i];
@@ -60,21 +61,25 @@ void FESampler::sample(dealii::Vector<double> solution)
             double shape_value = solution_component * fe_values.shape_value(i, i);
             m_values[current_dof_index] = shape_value;
 
-            // Now iterating over all q_points for current dof (current shape function) and adding components to gradient and laplacian
-            for (unsigned int q_index = 0; q_index < n_q_points; ++q_index)
+            if (static_cast<unsigned int>(targets) & static_cast<unsigned int>(Targets::grad_lap))
             {
-                auto gradient_part = solution_component * fe_values.shape_grad(i, q_index);
+                // Now iterating over all q_points for current dof (current shape function) and adding components to gradient and laplacian
+                for (unsigned int q_index = 0; q_index < n_q_points; ++q_index)
+                {
+                    auto gradient_part = solution_component * fe_values.shape_grad(i, q_index);
 
-                auto hessian = fe_values.shape_hessian_component(i, q_index, 0);
-                double laplacian_part = solution_component * (hessian[0][0] + hessian[1][1]);
+                    auto hessian = fe_values.shape_hessian_component(i, q_index, 0);
+                    double laplacian_part = solution_component * (hessian[0][0] + hessian[1][1]);
 
-                // We use local_dof_indices[ >>> q_index <<< ] because q_index is number of support point for q_index's shape sunction in this cell
-                m_gradients[local_dof_indices[q_index]] += gradient_part;
-                m_laplacians[local_dof_indices[q_index]] += laplacian_part;
+                    // We use local_dof_indices[ >>> q_index <<< ] because q_index is number of support point for q_index's shape sunction in this cell
+                    m_gradients[local_dof_indices[q_index]] += gradient_part;
+                    m_laplacians[local_dof_indices[q_index]] += laplacian_part;
+                }
             }
 
         }
     }
+    m_last_targets = targets;
 }
 
 const std::vector<dealii::Point<2>>& FESampler::points()
