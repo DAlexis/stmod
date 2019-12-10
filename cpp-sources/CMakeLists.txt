@@ -25,13 +25,14 @@ if (NOT COMMAND add_functional_test)
 	endmacro()
 endif()
 
+include(detect-gtest.cmake)
 add_subdirectory(dsiterpp/cpp-sources)
 add_subdirectory(libstmod)
 add_subdirectory(model-runner)
 
 # To enable ctest usage
 enable_testing()
-include(detect-gtest.cmake)
+
 if(GTEST_FOUND)
     add_subdirectory(unit-tests)
     #add_subdirectory(functional-tests)

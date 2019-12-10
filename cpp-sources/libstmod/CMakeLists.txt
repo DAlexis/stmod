@@ -9,6 +9,7 @@ find_package(deal.II REQUIRED)
 set(LIB_SOURCE
     ${PROJECT_SOURCE_DIR}/src/utils.cpp
     ${PROJECT_SOURCE_DIR}/src/poisson-solver.cpp
+    ${PROJECT_SOURCE_DIR}/src/poisson-solver-adaptor.cpp
     ${PROJECT_SOURCE_DIR}/src/poisson-grid.cpp
     ${PROJECT_SOURCE_DIR}/src/fe-sampler.cpp
     ${PROJECT_SOURCE_DIR}/src/field-output.cpp
@@ -20,6 +21,7 @@ set(LIB_SOURCE
 set(LIB_HPP
     ${PROJECT_SOURCE_DIR}/stmod/utils.hpp
     ${PROJECT_SOURCE_DIR}/stmod/poisson-solver.hpp
+    ${PROJECT_SOURCE_DIR}/stmod/poisson-solver-adaptor.hpp
     ${PROJECT_SOURCE_DIR}/stmod/poisson-grid.hpp
     ${PROJECT_SOURCE_DIR}/stmod/fe-sampler.hpp
     ${PROJECT_SOURCE_DIR}/stmod/field-output.hpp
