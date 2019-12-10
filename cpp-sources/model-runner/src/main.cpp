@@ -23,6 +23,8 @@
 #include "stmod/fractions.hpp"
 #include "stmod/fractions-physics/e.hpp"
 
+#include "stmod/full-models/model-one.hpp"
+
 #include <deal.II/grid/tria.h>
 #include <deal.II/grid/tria_accessor.h>
 #include <deal.II/grid/tria_iterator.h>
@@ -43,6 +45,10 @@ using namespace std;
 
 int main()
 {
+    ModelOne model;
+
+    /*
+
     Grid grid;
     grid.load_from_file(
         "/home/dalexies/Projects/stmod/meshes/spheric-needles-1.geo",
@@ -86,6 +92,7 @@ int main()
 
     poisson_solver.solve();
     poisson_solver.output("solution-2d-2.vtk");
+    */
 /*
     poisson_solver.estimate_error();
     poisson_solver.refine_and_coarsen_grid();
