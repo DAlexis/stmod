@@ -153,7 +153,8 @@ void PoissonSolver::assemble_system()
 
 void PoissonSolver::solve_lin_eq()
 {
-    SolverControl solver_control(4000, 1e-12);
+    std::cout << "Solving linear equations" << std::endl;
+    SolverControl solver_control(1000, 1e-4);
     SolverCG<>        solver(solver_control);
     solver.solve(m_system_matrix, m_solution, m_system_rhs, PreconditionIdentity());
     std::cout << "     " << solver_control.last_step()
@@ -163,6 +164,8 @@ void PoissonSolver::solve_lin_eq()
 
 void PoissonSolver::estimate_error()
 {
+    if (!m_has_solution)
+        solve();
     m_estimated_error_per_cell.reinit(m_triangulation.n_active_cells());
     KellyErrorEstimator<2>::estimate(
         m_dof_handler,
@@ -180,8 +183,9 @@ const std::vector<dealii::Vector<double>>& PoissonSolver::refine_and_coarsen_gri
     // flag some cells for refinement and coarsening, e.g.
     GridRefinement::refine_and_coarsen_fixed_number(m_triangulation,
                                                       m_estimated_error_per_cell,
-                                                      0.3,
-                                                      0.03);
+                                                      0.1,
+                                                      0.03,
+                                                      1000);
     // prepare the triangulation,
     m_triangulation.prepare_coarsening_and_refinement();
 
@@ -207,6 +211,7 @@ const std::vector<dealii::Vector<double>>& PoissonSolver::refine_and_coarsen_gri
 
     // and interpolate the solution
     soltution_transfer.interpolate(solutions_to_interpolate, m_solutions_interpolated);
+    m_has_solution = false;
     return m_solutions_interpolated;
 }
 
@@ -247,5 +252,6 @@ void PoissonSolver::solve()
     setup_system();
     assemble_system();
     solve_lin_eq();
+    m_has_solution = true;
 }
 

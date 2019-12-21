@@ -11,13 +11,6 @@
 
 #include <string>
 
-class SolutionsStorage
-{
-public:
-
-private:
-};
-
 class PoissonSolver
 {
 public:
@@ -55,6 +48,8 @@ private:
 
     double phi_0 = 0;
     double pli_L = 1;
+
+    bool m_has_solution = false; // For estimate_error() function to prevent run without solution
 };
 
 #endif // __POISSON_SOLVER_HPP__

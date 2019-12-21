@@ -25,8 +25,10 @@ public:
 
     void resize_interpolate(SolutionInterpolatorFunc interpolator);
 
+    void set_const_values(size_t fraction_index, double value);
     const dealii::Vector<double>& current(size_t fraction_index);
     const dealii::Vector<double>& previous(size_t fraction_index);
+    dealii::Vector<double>& previous_w(size_t fraction_index);
     dealii::Vector<double>& rhs(size_t fraction_index);
 
 private:

@@ -46,6 +46,9 @@ using namespace std;
 int main()
 {
     ModelOne model;
+    model.output_fractions("fractions.vtk");
+    //model.run();
+    //model.output_fractions("fractions.vtk");
 
     /*
 

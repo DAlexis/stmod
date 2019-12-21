@@ -6,10 +6,10 @@
 class PoissonSolver;
 class FractionsStorage;
 
-class PoissonSolverAdaptor : public dsiterpp::IRHS
+class PoissonSolverRHSAdaptor : public dsiterpp::IRHS
 {
 public:
-    PoissonSolverAdaptor(PoissonSolver& solver, FractionsStorage& fractions_storage);
+    PoissonSolverRHSAdaptor(PoissonSolver& solver, FractionsStorage& fractions_storage);
 
     void pre_iteration_job(double time) override;
     void pre_sub_iteration_job(double time) override;

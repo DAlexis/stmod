@@ -1,11 +1,23 @@
-#ifndef __VECTOR_OUTPUT_HPP__
-#define __VECTOR_OUTPUT_HPP__
+#ifndef FIELD_OUTPUT_HPP_INCLUDED
+#define FIELD_OUTPUT_HPP_INCLUDED
 
 #include <deal.II/base/function.h>
 #include <deal.II/fe/fe_system.h>
 #include <deal.II/numerics/data_out.h>
 
 #include <string>
+
+class ScalarOutputMaker
+{
+public:
+    ScalarOutputMaker(const dealii::DoFHandler<2>& dof_handler);
+
+    void output_scalar(const dealii::Vector<double>& vector, const std::string& filename, const std::string& scalar_name = "scalar");
+
+private:
+
+    const dealii::DoFHandler<2>&  m_dof_handler;
+};
 
 class VectorOutputMaker
 {
@@ -25,4 +37,4 @@ private:
 
 };
 
-#endif // __VECTOR_OUTPUT_HPP__
+#endif // FIELD_OUTPUT_HPP_INCLUDED

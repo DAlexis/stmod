@@ -81,8 +81,16 @@ void FractionsStorage::set_values(std::vector<double>::const_iterator& values)
 
 void FractionsStorage::resize_interpolate(SolutionInterpolatorFunc interpolator)
 {
-    m_current_value = interpolator(m_current_value);
+    m_previous_value = interpolator(m_previous_value);
     reinit_additional_arrays();
+}
+
+void FractionsStorage::set_const_values(size_t fraction_index, double value)
+{
+    for (unsigned int i = 0; i < m_previous_value[fraction_index].size(); i++)
+    {
+        m_previous_value[fraction_index][i] = value;
+    }
 }
 
 const dealii::Vector<double>& FractionsStorage::current(size_t fraction_index)
@@ -91,6 +99,11 @@ const dealii::Vector<double>& FractionsStorage::current(size_t fraction_index)
 }
 
 const dealii::Vector<double>& FractionsStorage::previous(size_t fraction_index)
+{
+    return m_previous_value[fraction_index];
+}
+
+dealii::Vector<double>& FractionsStorage::previous_w(size_t fraction_index)
 {
     return m_previous_value[fraction_index];
 }

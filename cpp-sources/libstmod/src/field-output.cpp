@@ -5,6 +5,21 @@
 
 using namespace dealii;
 
+ScalarOutputMaker::ScalarOutputMaker(const dealii::DoFHandler<2>& dof_handler) :
+    m_dof_handler(dof_handler)
+{
+}
+
+void ScalarOutputMaker::output_scalar(const dealii::Vector<double>& data, const std::string& filename, const std::string& scalar_name)
+{
+    DataOut<2> data_out;
+    data_out.attach_dof_handler(m_dof_handler);
+    data_out.add_data_vector(data, scalar_name);
+    data_out.build_patches();
+    std::ofstream output(filename.c_str());
+    data_out.write_vtk(output);
+}
+
 VectorOutputMaker::VectorOutputMaker(const dealii::Triangulation<2>& triangulation, unsigned int polynomial_degree) :
     m_triangulation(triangulation), m_fe(FE_Q<2>(polynomial_degree), 2)
 {

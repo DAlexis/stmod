@@ -5,6 +5,7 @@
 #include <deal.II/base/quadrature.h>
 
 #include <vector>
+#include <functional>
 
 /**
  * @brief The FESampler class produce calculation of coordinates, gradients and laplacians
@@ -24,6 +25,7 @@ public:
 
     FESampler(const dealii::DoFHandler<2>& dof_handler);
 
+    void sample_points();
     void sample(dealii::Vector<double> solution, Targets targets = Targets::all);
 
     const std::vector<dealii::Point<2>>& points();
@@ -47,6 +49,18 @@ private:
     std::vector<double> m_laplacians;
 
     Targets m_last_targets;
+};
+
+class FieldAssigner
+{
+public:
+    using FieldFunction = std::function<double (const dealii::Point<2>& point)>;
+    FieldAssigner(const dealii::DoFHandler<2>& dof_handler);
+
+    void assign_fiend(dealii::Vector<double>& target_vector, FieldFunction function);
+
+private:
+    FESampler m_sampler;
 
 };
 

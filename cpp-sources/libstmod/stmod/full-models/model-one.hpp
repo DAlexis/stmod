@@ -7,7 +7,7 @@ class Grid;
 class PoissonSolver;
 class FractionsStorage;
 class ElectronsRHS;
-class PoissonSolverAdaptor;
+class PoissonSolverRHSAdaptor;
 namespace dsiterpp {
     class TimeIterator;
     class RHSGroup;
@@ -28,6 +28,7 @@ public:
 
     void run();
     void output_potential(const std::string& filename);
+    void output_fractions(const std::string& filename);
 
 private:
     void init_grid();
@@ -41,7 +42,7 @@ private:
     std::shared_ptr<PoissonSolver> m_poisson_solver;
     std::shared_ptr<FractionsStorage> m_frac_storage;
 
-    std::shared_ptr<PoissonSolverAdaptor> m_poisson_solver_adaptor;
+    std::shared_ptr<PoissonSolverRHSAdaptor> m_poisson_solver_adaptor;
 
     std::shared_ptr<ElectronsRHS> m_electrons_rhs;
 

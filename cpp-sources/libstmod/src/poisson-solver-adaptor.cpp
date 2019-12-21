@@ -4,12 +4,12 @@
 
 using namespace dsiterpp;
 
-PoissonSolverAdaptor::PoissonSolverAdaptor(PoissonSolver& solver, FractionsStorage& fractions_storage) :
+PoissonSolverRHSAdaptor::PoissonSolverRHSAdaptor(PoissonSolver& solver, FractionsStorage& fractions_storage) :
     m_solver(solver), m_fractions_storage(fractions_storage)
 {
 }
 
-void PoissonSolverAdaptor::pre_iteration_job(double)
+void PoissonSolverRHSAdaptor::pre_iteration_job(double)
 {
     m_solver.estimate_error();
     m_fractions_storage.resize_interpolate(
@@ -20,7 +20,7 @@ void PoissonSolverAdaptor::pre_iteration_job(double)
     );
 }
 
-void PoissonSolverAdaptor::pre_sub_iteration_job(double)
+void PoissonSolverRHSAdaptor::pre_sub_iteration_job(double)
 {
     m_solver.solve();
 }
