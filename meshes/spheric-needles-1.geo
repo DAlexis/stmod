@@ -1,16 +1,21 @@
 // Gmsh project created on Sat Sep 28 14:07:03 2019
 SetFactory("OpenCASCADE");
 
-// Size in mm
+// For size in m
+scale = 1.0e-3;
 
-needle_rad = 200e-3;
-needle_len = 5;
-cyl_height = 25;
-cyl_rad = 15;
+// For size in mm
+//scale = 1.0;
+
+needle_rad = 200e-3 * scale;
+needle_len = 5 * scale;
+cyl_height = 25 * scale;
+cyl_rad = 15 * scale;
+
 //+
 
 // Bottom needle
-Point(1) = {0.0, 0, 0, 3.0};
+Point(1) = {0.0, 0, 0, cyl_rad / 5.0};
 /*
 Point(1) = {needle_rad, 0, 0, 1.0};
 Point(2) = {needle_rad, needle_len, 0, 1.0};
@@ -25,8 +30,8 @@ Point(8) = {needle_rad, cyl_height-needle_len, 0, needle_rad / 4.0};
 Point(9) = {needle_rad, cyl_height, 0, needle_rad};
 
 // Contour
-Point(10) = {cyl_rad, cyl_height, 0, 3.0};
-Point(11) = {cyl_rad, 0, 0, 3.0};
+Point(10) = {cyl_rad, cyl_height, 0, cyl_rad / 5.0};
+Point(11) = {cyl_rad, 0, 0, cyl_rad / 5.0};
 
 //+
 Line(1) = {8, 9};
