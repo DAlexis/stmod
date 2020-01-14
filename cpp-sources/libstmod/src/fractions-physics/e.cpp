@@ -17,7 +17,7 @@ void ElectronsRHS::calculate_rhs(double time)
 {
     FESampler field_sampler(m_dof_handler), electrons_sampler(m_dof_handler);
 
-    auto ne_current = m_storage.current(m_fraction_index);
+    const dealii::Vector<double>& ne_current = m_storage.current(m_fraction_index);
     dealii::Vector<double>& ne_rhs = m_storage.rhs(m_fraction_index);
 
     // Sampling electric field gradient
@@ -31,6 +31,6 @@ void ElectronsRHS::calculate_rhs(double time)
 
     for (unsigned int i = 0; i < ne_current.size(); i++)
     {
-        ne_rhs[i] = constants.D_e * n_laplacians[i];
+        ne_rhs[i] = 1e6;//constants.D_e * n_laplacians[i];
     }
 }

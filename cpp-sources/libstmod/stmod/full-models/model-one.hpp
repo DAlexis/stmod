@@ -1,6 +1,7 @@
 #ifndef FULL_MODELS_MODEL_ONE_HPP_INCLUDED
 #define FULL_MODELS_MODEL_ONE_HPP_INCLUDED
 
+#include "dsiterpp/time-iter.hpp"
 #include <memory>
 
 class Grid;
@@ -30,6 +31,8 @@ public:
     void output_potential(const std::string& filename);
     void output_fractions(const std::string& filename);
 
+    void output_hook(double real_time);
+
 private:
     void init_grid();
     void init_poisson_solver();
@@ -50,6 +53,8 @@ private:
     std::shared_ptr<dsiterpp::RHSGroup> m_RHSs;
     std::shared_ptr<dsiterpp::IErrorEstimator> m_error_estimator;
     std::shared_ptr<dsiterpp::IIntegrator> m_intergator;
+
+    std::shared_ptr<dsiterpp::TimeHookPeriodicFunc> m_output_hook;
 };
 
 #endif // FULL_MODELS_MODEL_ONE_HPP_INCLUDED

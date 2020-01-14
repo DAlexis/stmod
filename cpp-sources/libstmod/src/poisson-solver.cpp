@@ -154,7 +154,7 @@ void PoissonSolver::assemble_system()
 void PoissonSolver::solve_lin_eq()
 {
     std::cout << "Solving linear equations" << std::endl;
-    SolverControl solver_control(1000, 1e-4);
+    SolverControl solver_control(2000, 1e-4);
     SolverCG<>        solver(solver_control);
     solver.solve(m_system_matrix, m_solution, m_system_rhs, PreconditionIdentity());
     std::cout << "     " << solver_control.last_step()
@@ -177,6 +177,7 @@ void PoissonSolver::estimate_error()
 
 const std::vector<dealii::Vector<double>>& PoissonSolver::refine_and_coarsen_grid(const std::vector<dealii::Vector<double>>& solutions_to_interpolate)
 {
+    return solutions_to_interpolate;
     const size_t solutions_count = solutions_to_interpolate.size();
 
     dealii::SolutionTransfer<2> soltution_transfer(m_dof_handler);
@@ -243,7 +244,7 @@ void PoissonSolver::output(const std::string& filename) const
     data_out.add_data_vector(m_solution, "solution");
     data_out.build_patches();
     std::ofstream output(filename.c_str());
-    data_out.write_vtk(output);
+    data_out.write_vtu(output);
 }
 
 void PoissonSolver::solve()

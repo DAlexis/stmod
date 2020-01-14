@@ -4,6 +4,7 @@
 #include "stmod/fractions.hpp"
 
 #include <deal.II/dofs/dof_handler.h>
+#include <deal.II/lac/sparse_matrix.h>
 
 struct ElectronsConstants
 {
@@ -37,6 +38,21 @@ private:
     const dealii::Vector<double>& m_potential;
     const dealii::DoFHandler<2>& m_dof_handler;
 
+};
+
+class ElectronIterator
+{
+public:
+    ElectronIterator(
+        FractionsStorage& storage,
+        size_t fraction_index,
+        const dealii::Vector<double>& potential_solution,
+        const dealii::DoFHandler<2>& dof_handler
+    );
+
+private:
+    dealii::SparseMatrix<double> m_laplace_matrix;
+    dealii::SparseMatrix<double> m_system_matrix;
 };
 
 #endif // FRACTIONS_PHYSICS_E_HPP_INCLUDED

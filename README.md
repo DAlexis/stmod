@@ -18,9 +18,15 @@ Poisson equation solver on axially symmetric geometry.
 
 [x] Solution-like vector interpolation for refine <- Use SolutionTransfer class
 
-[ ] Scalar field output class
+[x] Scalar field output class
 
 [ ] Electrons emission possibility
+
+[ ] Add right hand side in cyllindric geometry for poisson
+
+[ ] Fix laplacian for cylliongric geomentry
+
+[ ] Add output hook
 
 ### Low priority
 
@@ -28,4 +34,4 @@ Poisson equation solver on axially symmetric geometry.
 
 [ ] Manifold ids for boundary -- ask Fedor
 
-[ ] Laplacian output test
+[x] Laplacian output test

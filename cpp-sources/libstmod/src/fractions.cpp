@@ -7,7 +7,11 @@ FractionsStorage::FractionsStorage()
 
 void FractionsStorage::clear_subiteration()
 {
-    m_current_value = m_previous_value;
+    for (size_t i = 0; i < m_current_value.size(); i++)
+    {
+        m_current_value[i] = m_previous_value[i];
+    }
+
     for (auto &f : m_delta)
     {
         f = 0;
@@ -83,6 +87,7 @@ void FractionsStorage::resize_interpolate(SolutionInterpolatorFunc interpolator)
 {
     m_previous_value = interpolator(m_previous_value);
     reinit_additional_arrays();
+    clear_subiteration();
 }
 
 void FractionsStorage::set_const_values(size_t fraction_index, double value)
