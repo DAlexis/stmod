@@ -75,34 +75,59 @@ void PoissonSolver::setup_system()
     m_dof_handler.distribute_dofs(m_fe);
     m_solution.reinit(m_dof_handler.n_dofs());
     m_system_rhs.reinit(m_dof_handler.n_dofs());
+
     constraints.clear();
-    DoFTools::make_hanging_node_constraints(m_dof_handler, constraints);
+        DoFTools::make_hanging_node_constraints(m_dof_handler, constraints);
+/*
+        double phi_0 = 0.123;
+        double phi_L = 10.321;
 
-    double phi_0 = 0.123;
-    double phi_L = 10.321;
+        VectorTools::interpolate_boundary_values(
+            m_dof_handler,
+            1,
+            Functions::ConstantFunction<2>(phi_0),
+            constraints
+        );
 
-    VectorTools::interpolate_boundary_values(
-        m_dof_handler,
-        1,
-        Functions::ConstantFunction<2>(phi_0),
-        constraints
-    );
-
-    VectorTools::interpolate_boundary_values(
-        m_dof_handler,
-        2,
-        Functions::ConstantFunction<2>(phi_L),
-        constraints
-    );
-
+        VectorTools::interpolate_boundary_values(
+            m_dof_handler,
+            2,
+            Functions::ConstantFunction<2>(phi_L),
+            constraints
+        );*/
     constraints.close();
+
     DynamicSparsityPattern dsp(m_dof_handler.n_dofs());
     DoFTools::make_sparsity_pattern(m_dof_handler,
                                   dsp,
                                   constraints,
-                                  /*keep_constrained_dofs = */ false);
+                                  /*keep_constrained_dofs = */ true);
     m_sparsity_pattern.copy_from(dsp);
+
     m_system_matrix.reinit(m_sparsity_pattern);
+
+    m_mass_matrix.reinit(m_sparsity_pattern);
+    m_laplace_matrix.reinit(m_sparsity_pattern);
+
+    MatrixCreator::create_mass_matrix(m_dof_handler,
+                                    QGauss<2>(m_fe.degree + 1),
+                                    m_mass_matrix);
+    MatrixCreator::create_laplace_matrix(m_dof_handler,
+                                   QGauss<2>(m_fe.degree + 1),
+                                   m_laplace_matrix);
+
+/*
+    MatrixCreator::create_mass_matrix(m_dof_handler,
+                                      QGauss<2>(m_fe.degree + 1),
+                                      m_mass_matrix,
+                                      (const Function< 2, double > *const) nullptr,
+                                      constraints);
+    MatrixCreator::create_laplace_matrix(m_dof_handler,
+                                         QGauss<2>(m_fe.degree + 1),
+                                         m_laplace_matrix,
+                                         (const Function< 2, double > *const) nullptr,
+                                         constraints);
+*/
 }
 
 void PoissonSolver::assemble_system()
@@ -110,6 +135,28 @@ void PoissonSolver::assemble_system()
     const RightHandSide right_hand_side;
 
     const QGauss<2> quadrature_formula(m_fe.degree + 1);
+
+    m_system_matrix = 0;
+    m_system_rhs = 0;
+    m_system_matrix.copy_from(m_laplace_matrix);
+    //m_system_matrix = m_laplace_matrix;
+
+    double phi_0 = 0.123;
+    double phi_L = 10.321;
+    VectorTools::interpolate_boundary_values(m_dof_handler,
+                                               1,
+                                               Functions::ConstantFunction<2>(phi_0),
+                                               m_boundary_values);
+    VectorTools::interpolate_boundary_values(m_dof_handler,
+                                               2,
+                                               Functions::ConstantFunction<2>(phi_L),
+                                               m_boundary_values);
+
+    MatrixTools::apply_boundary_values(m_boundary_values,
+                                         m_system_matrix,
+                                         m_solution,
+                                         m_system_rhs);
+    /*
     FEValues<2> fe_values(m_fe, quadrature_formula,
                           update_values | update_gradients |
                           update_quadrature_points | update_JxW_values);
@@ -149,6 +196,7 @@ void PoissonSolver::assemble_system()
         cell->get_dof_indices(local_dof_indices);
         constraints.distribute_local_to_global(cell_matrix, cell_rhs, local_dof_indices, m_system_matrix, m_system_rhs);
     }
+    */
 }
 
 void PoissonSolver::solve_lin_eq()

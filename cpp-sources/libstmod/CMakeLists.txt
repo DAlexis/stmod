@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+    cmake_minimum_required(VERSION 2.8)
 
 project(stmod)
 
@@ -14,7 +14,13 @@ set(LIB_SOURCE
     ${PROJECT_SOURCE_DIR}/src/fe-sampler.cpp
     ${PROJECT_SOURCE_DIR}/src/field-output.cpp
     ${PROJECT_SOURCE_DIR}/src/fractions.cpp
+    ${PROJECT_SOURCE_DIR}/src/fractions-base.cpp
+    ${PROJECT_SOURCE_DIR}/src/matgen.cpp
+    ${PROJECT_SOURCE_DIR}/src/mesh.cpp
+    ${PROJECT_SOURCE_DIR}/src/mesh-output.cpp
+    ${PROJECT_SOURCE_DIR}/src/fe-common.cpp
     ${PROJECT_SOURCE_DIR}/src/fractions-physics/e.cpp
+    ${PROJECT_SOURCE_DIR}/src/fractions-physics/electric-potential.cpp
     ${PROJECT_SOURCE_DIR}/src/full-models/model-one.cpp
 )
 
@@ -26,7 +32,13 @@ set(LIB_HPP
     ${PROJECT_SOURCE_DIR}/stmod/fe-sampler.hpp
     ${PROJECT_SOURCE_DIR}/stmod/field-output.hpp
     ${PROJECT_SOURCE_DIR}/stmod/fractions.hpp
+    ${PROJECT_SOURCE_DIR}/stmod/fractions-base.hpp
+    ${PROJECT_SOURCE_DIR}/stmod/matgen.hpp
+    ${PROJECT_SOURCE_DIR}/stmod/mesh.hpp
+    ${PROJECT_SOURCE_DIR}/stmod/mesh-output.hpp
+    ${PROJECT_SOURCE_DIR}/stmod/fe-common.hpp
     ${PROJECT_SOURCE_DIR}/stmod/fractions-physics/e.hpp
+    ${PROJECT_SOURCE_DIR}/stmod/fractions-physics/electric-potential.hpp
     ${PROJECT_SOURCE_DIR}/stmod/full-models/model-one.hpp
 )
 

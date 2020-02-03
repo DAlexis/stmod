@@ -44,7 +44,12 @@ private:
     dealii::Vector<double> m_system_rhs;
     dealii::Vector<float>  m_estimated_error_per_cell;
 
+    dealii::SparseMatrix<double> m_mass_matrix;
+    dealii::SparseMatrix<double> m_laplace_matrix;
+
     std::vector<dealii::Vector<double>> m_solutions_interpolated;
+
+    std::map<dealii::types::global_dof_index, double> m_boundary_values;
 
     double phi_0 = 0;
     double pli_L = 1;

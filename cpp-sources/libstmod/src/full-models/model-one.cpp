@@ -4,7 +4,7 @@
 #include "stmod/fractions.hpp"
 #include "stmod/fractions-physics/e.hpp"
 #include "stmod/poisson-solver.hpp"
-#include "stmod/poisson-grid.hpp"
+#include "stmod/mesh.hpp"
 #include "stmod/poisson-solver-adaptor.hpp"
 
 #include "dsiterpp/time-iter.hpp"
@@ -30,8 +30,8 @@ ModelOne::ModelOne()
 void ModelOne::run()
 {
     m_time_iterator->set_stop_time(1.0);
-    m_time_iterator->run();
-    //m_time_iterator->iterate();
+    //m_time_iterator->run();
+    m_time_iterator->iterate();
     /*m_time_iterator->iterate();
     m_time_iterator->iterate();
     m_time_iterator->iterate();*/

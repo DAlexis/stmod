@@ -22,8 +22,12 @@
 #include "stmod/field-output.hpp"
 #include "stmod/fractions.hpp"
 #include "stmod/fractions-physics/e.hpp"
+#include "stmod/fractions-physics/electric-potential.hpp"
+#include "stmod/mesh-output.hpp"
 
 #include "stmod/full-models/model-one.hpp"
+#include "stmod/fe-common.hpp"
+#include "stmod/mesh.hpp"
 
 #include <deal.II/grid/tria.h>
 #include <deal.II/grid/tria_accessor.h>
@@ -45,9 +49,30 @@ using namespace std;
 
 int main()
 {
-    ModelOne model;
+    Grid grid;
+    grid.load_from_file(
+        "/home/dalexies/Projects/stmod/meshes/spheric-needles-1.geo",
+        "/home/dalexies/Projects/stmod/meshes/spheric-needles-1.msh"
+    );
+    BoundaryAssigner boundary_assigner(grid);
+    boundary_assigner.assign_boundary_ids();
+
+    FEResources fe_res(grid.triangulation(), 3);
+    fe_res.init();
+
+    ElectricPotential pot(fe_res);
+    pot.init();
+
+    FractionsOutputMaker output_maker;
+    output_maker.add(&pot);
+
+    pot.solve();
+
+    output_maker.output(fe_res.dof_handler(), "frac-out.vtu");
+
+    /*ModelOne model;
     model.output_fractions("fractions.vtk");
-    model.run();
+    model.run();*/
     //model.output_fractions("fractions.vtk");
 
     /*

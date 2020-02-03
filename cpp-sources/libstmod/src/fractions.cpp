@@ -146,12 +146,12 @@ void FractionsStorage::reinit_additional_arrays()
 }
 
 
-FractionRHSBase::FractionRHSBase(FractionsStorage& storage, size_t fraction_index) :
+FractionBase::FractionBase(FractionsStorage& storage, size_t fraction_index) :
     m_storage(storage), m_fraction_index(fraction_index)
 {
 }
 
-size_t FractionRHSBase::fraction_index()
+size_t FractionBase::fraction_index()
 {
     return m_fraction_index;
 }

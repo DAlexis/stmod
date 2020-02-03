@@ -42,10 +42,10 @@ private:
     using dealii_vector_size_type = dealii::Vector<double>::size_type;
 };
 
-class FractionRHSBase : public dsiterpp::IRHS
+class FractionBase : public dsiterpp::IRHS
 {
 public:
-    FractionRHSBase(FractionsStorage& storage, size_t fraction_index);
+    FractionBase(FractionsStorage& storage, size_t fraction_index);
 
     size_t fraction_index();
 

@@ -7,7 +7,7 @@ ElectronsRHS::ElectronsRHS(
         const dealii::Vector<double>& potential_solution,
         const dealii::DoFHandler<2>& dof_handler
     ) :
-    FractionRHSBase(storage, fraction_index),
+    FractionBase(storage, fraction_index),
     m_potential(potential_solution),
     m_dof_handler(dof_handler)
 {
@@ -33,4 +33,17 @@ void ElectronsRHS::calculate_rhs(double time)
     {
         ne_rhs[i] = 1e6;//constants.D_e * n_laplacians[i];
     }
+}
+
+
+ElectronIterator::ElectronIterator(
+        FractionsStorage& storage,
+        size_t fraction_index,
+        const dealii::Vector<double>& potential_solution,
+        const dealii::DoFHandler<2>& dof_handler
+    ) :
+    FractionBase(storage, fraction_index),
+    //m_potential(potential_solution),
+    m_dof_handler(dof_handler)
+{
 }

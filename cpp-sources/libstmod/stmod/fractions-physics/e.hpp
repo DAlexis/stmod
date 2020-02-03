@@ -15,7 +15,7 @@ struct ElectronsConstants
     double nu_d_u1, nu_d_u2, nu_d_s; // Electron detachment frequencies
 };
 
-class ElectronsRHS : public FractionRHSBase
+class ElectronsRHS : public FractionBase
 {
 public:
     ElectronsRHS(
@@ -24,6 +24,7 @@ public:
         const dealii::Vector<double>& potential_solution,
         const dealii::DoFHandler<2>& dof_handler
     );
+
     ElectronsConstants constants;
 
     void calculate_rhs(double time) override;
@@ -40,7 +41,7 @@ private:
 
 };
 
-class ElectronIterator
+class ElectronIterator : public FractionBase
 {
 public:
     ElectronIterator(
@@ -50,9 +51,13 @@ public:
         const dealii::DoFHandler<2>& dof_handler
     );
 
+    ElectronsConstants constants;
+
 private:
     dealii::SparseMatrix<double> m_laplace_matrix;
+    dealii::SparseMatrix<double> m_mass_matrix;
     dealii::SparseMatrix<double> m_system_matrix;
+    const dealii::DoFHandler<2>& m_dof_handler;
 };
 
 #endif // FRACTIONS_PHYSICS_E_HPP_INCLUDED
