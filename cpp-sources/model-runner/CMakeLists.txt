@@ -16,18 +16,7 @@ set(EXE_SOURCES
     src/main.cpp
 )
 
-set(${PROJECT_NAME}_USED_INCDIRS
-    ${stmod_INCLUDE_DIRS}
-)
-
-include_directories(
-    ${${PROJECT_NAME}_USED_INCDIRS}
-)
-
-
 add_executable(${PROJECT_NAME} ${EXE_SOURCES})
 DEAL_II_SETUP_TARGET(${PROJECT_NAME})
 
-target_link_libraries (${PROJECT_NAME}
-    stmod
-)
+target_link_libraries (${PROJECT_NAME} stmod)

@@ -2,9 +2,14 @@
 #define FRACTIONS_PHYSICS_E_HPP_INCLUDED
 
 #include "stmod/fractions.hpp"
+#include "stmod/fractions-base.hpp"
+#include "stmod/fe-common.hpp"
 
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/lac/sparse_matrix.h>
+
+#include <vector>
+#include <tuple>
 
 struct ElectronsConstants
 {
@@ -58,6 +63,42 @@ private:
     dealii::SparseMatrix<double> m_mass_matrix;
     dealii::SparseMatrix<double> m_system_matrix;
     const dealii::DoFHandler<2>& m_dof_handler;
+};
+
+class Electrons : public IFractionData
+{
+public:
+    Electrons(const FEResources& fe_res);
+
+    void init();
+    void solve();
+
+    const std::string& name() const override;
+    const dealii::Vector<double>& value() const override;
+
+    void add_single_source(double reaction_const, const dealii::Vector<double>& source);
+    void add_pair_source(double reaction_const, const dealii::Vector<double>& source1, const dealii::Vector<double>& source2);
+
+private:
+    using PairSourceTuple = std::tuple<const dealii::Vector<double>*, const dealii::Vector<double>*>;
+
+    void assemble_system();
+    void solve_lin_eq();
+
+    const FEResources& m_fe_res;
+
+    dealii::SparseMatrix<double> m_system_matrix;
+    dealii::Vector<double> m_system_rhs;
+    dealii::Vector<double> m_concentration;
+    dealii::Vector<double> m_derivative;
+
+    std::vector<const dealii::Vector<double>*> m_single_sources;
+    std::vector<double> m_single_reaction_consts;
+
+    std::vector<PairSourceTuple> m_pair_sources;
+    std::vector<double> m_pair_reaction_consts;
+
+    const std::string m_name = "Electrons_density";
 };
 
 #endif // FRACTIONS_PHYSICS_E_HPP_INCLUDED

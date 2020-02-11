@@ -16,8 +16,14 @@ public:
     const std::string& name() const override;
     const dealii::Vector<double>& value() const override;
 
+    void add_charge(const dealii::Vector<double>& charge_vector, double mul = 1.0);
+
+    const dealii::Vector<double>& total_chagre() const;
+
 private:
     using ConstFunc = dealii::Functions::ConstantFunction<2>;
+
+    void calc_total_charge();
     void assemble_system();
     void solve_lin_eq();
 
@@ -25,8 +31,11 @@ private:
 
     dealii::SparseMatrix<double> m_system_matrix;
     dealii::Vector<double> m_system_rhs;
-    dealii::Vector<double> m_system_rhs2;
     dealii::Vector<double> m_solution;
+
+    std::vector<const dealii::Vector<double>*> m_charges;
+    std::vector<double> m_charges_muls;
+    dealii::Vector<double> m_total_charge;
 
     std::map<dealii::types::global_dof_index, double> m_boundary_values;
 

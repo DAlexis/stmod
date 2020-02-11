@@ -31,34 +31,43 @@ void FEResources::init()
 
     m_mass_matrix.reinit(m_sparsity_pattern);
     m_laplace_matrix.reinit(m_sparsity_pattern);
-    m_laplace_addition_matrix.reinit(m_sparsity_pattern);
     m_r_laplace_matrix_axial.reinit(m_sparsity_pattern);
+    m_r_mass_matrix.reinit(m_sparsity_pattern);
 
-    create_mass_matrix_axial(m_dof_handler,
+    m_phi_i_phi_j_dot_r_phi_k.clear();
+    m_grad_phi_i_grad_phi_j_dot_r_phi_k.clear();
+
+    MatrixTools::create_mass_matrix(m_dof_handler,
+                            QGauss<2>(2*m_fe.degree),
                             m_mass_matrix,
-                            m_constraints,
-                            QGauss<2>(m_fe.degree + 1));
+                            static_cast<const Function<2> *const>(nullptr),
+                            m_constraints);
 
-    create_laplace_matrix_axial(m_dof_handler,
-                               m_laplace_matrix,
-                               m_constraints,
-                               QGauss<2>(m_fe.degree + 1));
-
-    create_1_x_dphi_dx_dot_phi(m_dof_handler,
-                               m_laplace_addition_matrix,
-                               m_constraints,
-                               QGauss<2>(2*m_fe.degree));
+    MatrixTools::create_laplace_matrix(m_dof_handler,
+                            QGauss<2>(2 * m_fe.degree),
+                            m_laplace_matrix,
+                            static_cast<const Function<2> *const>(nullptr),
+                            m_constraints);
 
     create_r_laplace_matrix_axial(m_dof_handler,
                                m_r_laplace_matrix_axial,
                                m_constraints,
-                               QGauss<2>(m_fe.degree + 1));
+                               QGauss<2>(2 * m_fe.degree + 1));
 
+    create_r_mass_matrix_axial(m_dof_handler,
+                               m_r_mass_matrix,
+                               m_constraints,
+                               QGauss<2>(2 * m_fe.degree + 1));
 
+    create_phi_i_phi_j_dot_r_phi_k(
+            m_dof_handler,
+            m_phi_i_phi_j_dot_r_phi_k,
+            QGauss<2>(3 * m_fe.degree + 1));
 
-    /*MatrixCreator::create_laplace_matrix(m_dof_handler,
-                                   QGauss<2>(m_fe.degree + 1),
-                                   m_laplace_matrix);*/
+    create_grad_phi_i_grad_phi_j_dot_r_phi_k(
+            m_dof_handler,
+            m_grad_phi_i_grad_phi_j_dot_r_phi_k,
+            QGauss<2>(3 * m_fe.degree + 1));
 }
 
 const dealii::DoFHandler<2>& FEResources::dof_handler() const
@@ -71,14 +80,24 @@ const dealii::SparseMatrix<double>& FEResources::laplace_matrix() const
     return m_laplace_matrix;
 }
 
-const dealii::SparseMatrix<double>& FEResources::laplace_addition_matrix() const
-{
-    return m_laplace_addition_matrix;
-}
-
 const dealii::SparseMatrix<double>& FEResources::r_laplace_matrix_axial() const
 {
     return m_r_laplace_matrix_axial;
+}
+
+const dealii::SparseMatrix<double>& FEResources::r_mass_matrix() const
+{
+    return m_r_mass_matrix;
+}
+
+const SparseTensor3& FEResources::phi_i_phi_j_dot_r_phi_k() const
+{
+    return m_phi_i_phi_j_dot_r_phi_k;
+}
+
+const SparseTensor3& FEResources::grad_phi_i_grad_phi_j_dot_r_phi_k() const
+{
+    return m_grad_phi_i_grad_phi_j_dot_r_phi_k;
 }
 
 const dealii::SparseMatrix<double>& FEResources::mass_matrix() const

@@ -1,5 +1,6 @@
 #include "stmod/fractions-physics/electric-potential.hpp"
 #include "stmod/matgen.hpp"
+#include "stmod/phys-consts.hpp"
 
 #include <deal.II/numerics/vector_tools.h>
 #include <deal.II/numerics/matrix_tools.h>
@@ -20,7 +21,7 @@ void ElectricPotential::init(double needle_potential, double bottom_potential)
 
     m_solution.reinit(m_fe_res.dof_handler().n_dofs());
     m_system_rhs.reinit(m_fe_res.dof_handler().n_dofs());
-    m_system_rhs2.reinit(m_fe_res.dof_handler().n_dofs());
+    m_total_charge.reinit(m_fe_res.dof_handler().n_dofs());
 
     m_system_matrix.reinit(m_fe_res.sparsity_pattern());
 
@@ -45,6 +46,7 @@ void ElectricPotential::init(double needle_potential, double bottom_potential)
 
 void ElectricPotential::solve()
 {
+    calc_total_charge();
     assemble_system();
     solve_lin_eq();
 }
@@ -52,7 +54,8 @@ void ElectricPotential::solve()
 void ElectricPotential::assemble_system()
 {
     m_system_rhs = 0;
-    //add_dirichlet_rhs_axial(m_fe_res.dof_handler(), m_system_rhs, m_boundary_funcs);
+    m_fe_res.r_mass_matrix().vmult(m_system_rhs, m_total_charge);
+    m_system_rhs *= - Consts::e / Consts::epsilon_0;
 
     MatrixTools::apply_boundary_values(m_boundary_values,
                                          m_system_matrix,
@@ -79,4 +82,24 @@ const std::string& ElectricPotential::name() const
 const dealii::Vector<double>& ElectricPotential::value() const
 {
     return m_solution;
+}
+
+void ElectricPotential::add_charge(const dealii::Vector<double>& charge_vector, double mul)
+{
+    m_charges.push_back(&charge_vector);
+    m_charges_muls.push_back(mul);
+}
+
+const dealii::Vector<double>& ElectricPotential::total_chagre() const
+{
+    return m_total_charge;
+}
+
+void ElectricPotential::calc_total_charge()
+{
+    m_total_charge = 0;
+    for (size_t i=0; i < m_charges.size(); i++)
+    {
+        m_total_charge.add(m_charges_muls[i], *(m_charges[i]));
+    }
 }
