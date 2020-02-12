@@ -1,6 +1,7 @@
 #ifndef FE_COMMON_HPP_INCLUDED
 #define FE_COMMON_HPP_INCLUDED
 
+#include "lin-eq-solver.hpp"
 #include "tensors.hpp"
 
 #include <deal.II/grid/tria.h>
@@ -9,7 +10,6 @@
 #include <deal.II/lac/dynamic_sparsity_pattern.h>
 #include <deal.II/lac/sparse_matrix.h>
 #include <deal.II/lac/affine_constraints.h>
-
 
 class FEResources
 {
@@ -38,10 +38,12 @@ public:
     const dealii::SparseMatrix<double>& mass_matrix() const;
     const dealii::SparsityPattern& sparsity_pattern() const;
     const dealii::AffineConstraints<double>& constraints() const;
+    const LinEqSolver& lin_eq_solver() const;
 
 private:
     dealii::Triangulation<2>& m_triangulation;
     dealii::AffineConstraints<double> m_constraints;
+    LinEqSolver m_lin_eq_solver{m_constraints, 1e-2};
 
     dealii::FE_Q<2>        m_fe;
     dealii::DoFHandler<2>  m_dof_handler;

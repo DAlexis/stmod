@@ -20,6 +20,7 @@ set(LIB_SOURCE
     ${PROJECT_SOURCE_DIR}/src/mesh.cpp
     ${PROJECT_SOURCE_DIR}/src/mesh-output.cpp
     ${PROJECT_SOURCE_DIR}/src/fe-common.cpp
+    ${PROJECT_SOURCE_DIR}/src/lin-eq-solver.cpp
     ${PROJECT_SOURCE_DIR}/src/fractions-physics/e.cpp
     ${PROJECT_SOURCE_DIR}/src/fractions-physics/electric-potential.cpp
     ${PROJECT_SOURCE_DIR}/src/full-models/model-one.cpp
@@ -39,6 +40,7 @@ set(LIB_HPP
     ${PROJECT_SOURCE_DIR}/stmod/mesh.hpp
     ${PROJECT_SOURCE_DIR}/stmod/mesh-output.hpp
     ${PROJECT_SOURCE_DIR}/stmod/fe-common.hpp
+    ${PROJECT_SOURCE_DIR}/stmod/lin-eq-solver.hpp
     ${PROJECT_SOURCE_DIR}/stmod/fractions-physics/e.hpp
     ${PROJECT_SOURCE_DIR}/stmod/fractions-physics/electric-potential.hpp
     ${PROJECT_SOURCE_DIR}/stmod/full-models/model-one.hpp

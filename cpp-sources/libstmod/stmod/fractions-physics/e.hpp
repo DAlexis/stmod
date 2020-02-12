@@ -65,6 +65,12 @@ private:
     const dealii::DoFHandler<2>& m_dof_handler;
 };
 
+struct ElectronsParameters
+{
+    double mu_e = 5.92; // m^2 V^-1 s^-1
+    double D_e = 0.1; // m^2 s^-1
+};
+
 class Electrons : public IFractionData
 {
 public:
@@ -75,15 +81,20 @@ public:
 
     const std::string& name() const override;
     const dealii::Vector<double>& value() const override;
+    const dealii::Vector<double>& derivative() const;
 
     void add_single_source(double reaction_const, const dealii::Vector<double>& source);
     void add_pair_source(double reaction_const, const dealii::Vector<double>& source1, const dealii::Vector<double>& source2);
+    void set_potential(const dealii::Vector<double>& potential);
 
+    ElectronsParameters parameters;
 private:
     using PairSourceTuple = std::tuple<const dealii::Vector<double>*, const dealii::Vector<double>*>;
 
     void assemble_system();
     void solve_lin_eq();
+
+    void add_single_point_derivative();
 
     const FEResources& m_fe_res;
 
@@ -91,12 +102,17 @@ private:
     dealii::Vector<double> m_system_rhs;
     dealii::Vector<double> m_concentration;
     dealii::Vector<double> m_derivative;
+    dealii::Vector<double> m_derivative_without_single_point;
+
+    dealii::Vector<double> m_tmp;
 
     std::vector<const dealii::Vector<double>*> m_single_sources;
     std::vector<double> m_single_reaction_consts;
 
     std::vector<PairSourceTuple> m_pair_sources;
     std::vector<double> m_pair_reaction_consts;
+
+    const dealii::Vector<double>* m_potential = nullptr;
 
     const std::string m_name = "Electrons_density";
 };

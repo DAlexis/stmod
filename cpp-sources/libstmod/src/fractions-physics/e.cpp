@@ -1,5 +1,6 @@
 #include "stmod/fractions-physics/e.hpp"
 #include "stmod/fe-sampler.hpp"
+#include "stmod/matgen.hpp"
 
 ElectronsRHS::ElectronsRHS(
         FractionsStorage& storage,
@@ -64,6 +65,10 @@ const dealii::Vector<double>& Electrons::value() const
     return m_concentration;
 }
 
+const dealii::Vector<double>& Electrons::derivative() const
+{
+}
+
 void Electrons::add_single_source(double reaction_const, const dealii::Vector<double>& source)
 {
     m_single_sources.push_back(&source);
@@ -76,17 +81,64 @@ void Electrons::add_pair_source(double reaction_const, const dealii::Vector<doub
     m_pair_reaction_consts.push_back(reaction_const);
 }
 
-void Electrons::init()
+void Electrons::set_potential(const dealii::Vector<double>& potential)
 {
-    /// @todo Here
+    m_potential = &potential;
 }
 
-void Electrons::assemble_system()
+void Electrons::init()
 {
-    /// @todo Here
+    m_system_rhs.reinit(m_fe_res.dof_handler().n_dofs());
+
+    m_concentration.reinit(m_fe_res.dof_handler().n_dofs());
+    m_derivative.reinit(m_fe_res.dof_handler().n_dofs());
+    m_derivative_without_single_point.reinit(m_fe_res.dof_handler().n_dofs());
+    m_tmp.reinit(m_fe_res.dof_handler().n_dofs());
+
+    m_system_matrix.reinit(m_fe_res.sparsity_pattern());
+
+    m_system_matrix.copy_from(m_fe_res.r_mass_matrix());
+}
+
+void Electrons::solve()
+{
+    assemble_system();
+    solve_lin_eq();
+    add_single_point_derivative();
+}
+
+
+void Electrons::assemble_system()
+{    
+    m_system_rhs = 0;
+    if (m_potential)
+        sum_with_tensor(m_system_rhs, m_concentration, *m_potential, m_fe_res.grad_phi_i_grad_phi_j_dot_r_phi_k());
+
+    m_system_rhs *= parameters.mu_e;
+
+    m_tmp = 0;
+    m_fe_res.r_laplace_matrix_axial().vmult(m_tmp, m_concentration);
+
+    m_system_rhs.add(parameters.D_e, m_tmp);
 }
 
 void Electrons::solve_lin_eq()
 {
-    /// @todo Here
+    m_fe_res.lin_eq_solver().solve(
+                m_system_matrix, m_concentration, m_system_rhs,
+                1e-2, m_name);
+}
+
+void Electrons::add_single_point_derivative()
+{
+    for (size_t i = 0; i < m_single_sources.size(); i++)
+    {
+        m_derivative.add(m_single_reaction_consts[i], (*m_single_sources[i]));
+    }
+
+    for (size_t i = 0; i < m_pair_sources.size(); i++)
+    {
+        m_tmp = *std::get<0>(m_pair_sources[i]) * *std::get<1>(m_pair_sources[i]);
+        m_derivative.add(m_pair_reaction_consts[i], m_tmp);
+    }
 }

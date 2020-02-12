@@ -5,6 +5,8 @@
 #include <deal.II/numerics/matrix_tools.h>
 #include <deal.II/base/quadrature_lib.h>
 
+#include <iostream>
+
 using namespace dealii;
 
 FEResources::FEResources(dealii::Triangulation<2>& triangulation, unsigned int degree) :
@@ -37,37 +39,47 @@ void FEResources::init()
     m_phi_i_phi_j_dot_r_phi_k.clear();
     m_grad_phi_i_grad_phi_j_dot_r_phi_k.clear();
 
+
+
+    std::cout << "Single-fraction problem has " << m_dof_handler.n_dofs() << " dimensions of freedom" << std::endl;
+    std::cout << "Creating mass matrix..." << std::endl;
     MatrixTools::create_mass_matrix(m_dof_handler,
                             QGauss<2>(2*m_fe.degree),
                             m_mass_matrix,
                             static_cast<const Function<2> *const>(nullptr),
                             m_constraints);
 
+    std::cout << "Creating laplace matrix..." << std::endl;
     MatrixTools::create_laplace_matrix(m_dof_handler,
                             QGauss<2>(2 * m_fe.degree),
                             m_laplace_matrix,
                             static_cast<const Function<2> *const>(nullptr),
                             m_constraints);
 
+    std::cout << "Creating r-laplace matrix..." << std::endl;
     create_r_laplace_matrix_axial(m_dof_handler,
                                m_r_laplace_matrix_axial,
                                m_constraints,
                                QGauss<2>(2 * m_fe.degree + 1));
 
+    std::cout << "Creating r-mass matrix..." << std::endl;
     create_r_mass_matrix_axial(m_dof_handler,
                                m_r_mass_matrix,
                                m_constraints,
                                QGauss<2>(2 * m_fe.degree + 1));
 
+    std::cout << "Creating phi_i_phi_j_dot_r_phi_k tensor..." << std::endl;
     create_phi_i_phi_j_dot_r_phi_k(
             m_dof_handler,
             m_phi_i_phi_j_dot_r_phi_k,
             QGauss<2>(3 * m_fe.degree + 1));
 
+    std::cout << "Creating grad_phi_i_grad_phi_j_dot_r_phi_k tensor..." << std::endl;
     create_grad_phi_i_grad_phi_j_dot_r_phi_k(
             m_dof_handler,
             m_grad_phi_i_grad_phi_j_dot_r_phi_k,
             QGauss<2>(3 * m_fe.degree + 1));
+    std::cout << "All matrixes and tensors created" << std::endl;
 }
 
 const dealii::DoFHandler<2>& FEResources::dof_handler() const
@@ -113,4 +125,9 @@ const dealii::SparsityPattern& FEResources::sparsity_pattern() const
 const dealii::AffineConstraints<double>& FEResources::constraints() const
 {
     return m_constraints;
+}
+
+const LinEqSolver& FEResources::lin_eq_solver() const
+{
+    return m_lin_eq_solver;
 }

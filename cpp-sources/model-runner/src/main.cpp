@@ -57,7 +57,7 @@ int main()
     BoundaryAssigner boundary_assigner(grid);
     boundary_assigner.assign_boundary_ids();
 
-    FEResources fe_res(grid.triangulation(), 3);
+    FEResources fe_res(grid.triangulation(), 1);
     fe_res.init();
 
     ElectricPotential pot(fe_res);

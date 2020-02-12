@@ -66,12 +66,17 @@ void ElectricPotential::assemble_system()
 
 void ElectricPotential::solve_lin_eq()
 {
+
+    m_fe_res.lin_eq_solver().solve(
+                m_system_matrix, m_solution, m_system_rhs,
+                (fabs(m_bottom_potential) + fabs(m_needle_potential)), m_name);
+    /*
     std::cout << "Potential: Solving linear equations" << std::endl;
     SolverControl solver_control(5000, 1e-2 * (fabs(m_bottom_potential) + fabs(m_needle_potential)));
     SolverCG<>        solver(solver_control);
     solver.solve(m_system_matrix, m_solution, m_system_rhs, PreconditionIdentity());
     std::cout << "Potential: " << solver_control.last_step() << " CG iterations needed to obtain convergence." << std::endl;
-    m_fe_res.constraints().distribute(m_solution);
+    m_fe_res.constraints().distribute(m_solution);*/
 }
 
 const std::string& ElectricPotential::name() const
