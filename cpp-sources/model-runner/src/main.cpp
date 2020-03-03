@@ -63,10 +63,16 @@ int main()
     ElectricPotential pot(fe_res);
     pot.init();
 
+    Electrons elec(fe_res);
+    elec.init();
+
+
     FractionsOutputMaker output_maker;
     output_maker.add(&pot);
+    output_maker.add(&elec);
 
     pot.solve();
+    elec.solve();
 
     output_maker.output(fe_res.dof_handler(), "frac-out.vtu");
 

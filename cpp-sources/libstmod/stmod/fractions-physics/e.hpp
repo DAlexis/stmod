@@ -83,6 +83,8 @@ public:
     const dealii::Vector<double>& value() const override;
     const dealii::Vector<double>& derivative() const;
 
+    dealii::Vector<double>& value_w() const;
+
     void add_single_source(double reaction_const, const dealii::Vector<double>& source);
     void add_pair_source(double reaction_const, const dealii::Vector<double>& source1, const dealii::Vector<double>& source2);
     void set_potential(const dealii::Vector<double>& potential);

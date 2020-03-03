@@ -67,6 +67,12 @@ const dealii::Vector<double>& Electrons::value() const
 
 const dealii::Vector<double>& Electrons::derivative() const
 {
+    return m_derivative;
+}
+
+dealii::Vector<double>& value_w() const
+{
+    return m_concentration;
 }
 
 void Electrons::add_single_source(double reaction_const, const dealii::Vector<double>& source)
