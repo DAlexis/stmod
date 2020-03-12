@@ -79,11 +79,12 @@ public:
     void init();
     void solve();
 
-    const std::string& name() const override;
-    const dealii::Vector<double>& value() const override;
+    const std::string& name(size_t index) const override;
+    const dealii::Vector<double>& value(size_t index) const override;
+    virtual size_t values_count() const override;
     const dealii::Vector<double>& derivative() const;
 
-    dealii::Vector<double>& value_w() const;
+    dealii::Vector<double>& value_w();
 
     void add_single_source(double reaction_const, const dealii::Vector<double>& source);
     void add_pair_source(double reaction_const, const dealii::Vector<double>& source1, const dealii::Vector<double>& source2);
@@ -116,7 +117,7 @@ private:
 
     const dealii::Vector<double>* m_potential = nullptr;
 
-    const std::string m_name = "Electrons_density";
+    const std::string m_names[2] = {"Electrons_density", "Electrons_density_derivative"};
 };
 
 #endif // FRACTIONS_PHYSICS_E_HPP_INCLUDED

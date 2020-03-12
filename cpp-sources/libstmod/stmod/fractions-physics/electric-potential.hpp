@@ -9,12 +9,13 @@ class ElectricPotential : public IFractionData
 public:
     ElectricPotential(const FEResources& fe_res);
 
-    void init(double needle_potential = 7, double bottom_potential = -3);
+    void init(double needle_potential = 7, double bottom_potential = 2);
 
     void solve();
 
-    const std::string& name() const override;
-    const dealii::Vector<double>& value() const override;
+    const std::string& name(size_t index) const override;
+    const dealii::Vector<double>& value(size_t index) const override;
+    virtual size_t values_count() const override;
 
     void add_charge(const dealii::Vector<double>& charge_vector, double mul = 1.0);
 

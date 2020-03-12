@@ -15,7 +15,8 @@ cyl_rad = 15 * scale;
 //+
 
 // Bottom needle
-Point(1) = {0.0, 0, 0, cyl_rad / 5.0};
+//Point(1) = {0.0, 0, 0, cyl_rad / 5.0};
+Point(1) = {0.0, 0, 0, needle_rad};
 /*
 Point(1) = {needle_rad, 0, 0, 1.0};
 Point(2) = {needle_rad, needle_len, 0, 1.0};

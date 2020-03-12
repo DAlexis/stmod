@@ -15,7 +15,10 @@ void FractionsOutputMaker::output(const dealii::DoFHandler<2>& dof_handler, cons
     data_out.attach_dof_handler(dof_handler);
     for (auto &frac : m_fractions)
     {
-        data_out.add_data_vector(frac->value(), frac->name());
+        for (size_t i = 0; i < frac->values_count(); i++)
+        {
+            data_out.add_data_vector(frac->value(i), frac->name(i));
+        }
     }
     data_out.build_patches();
     std::ofstream output(filename.c_str());

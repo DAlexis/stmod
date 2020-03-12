@@ -7,8 +7,9 @@ class IFractionData
 {
 public:
     virtual ~IFractionData() {}
-    virtual const std::string& name() const = 0 ;
-    virtual const dealii::Vector<double>& value() const = 0;
+    virtual const std::string& name(size_t index) const = 0 ;
+    virtual const dealii::Vector<double>& value(size_t index) const = 0;
+    virtual size_t values_count() const = 0;
 };
 
 

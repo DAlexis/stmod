@@ -12,26 +12,17 @@ Poisson equation solver on axially symmetric geometry.
 ## Active tasks
 ### Hi priority
 
-[x] Solution-like fields sampling with gradients and laplacians
+- [X] Diffusion problem works with axial symmetry
 
-[x] Vector field output class from FESampler
+- [ ] Grid adaptive refine in dynamic
 
-[x] Solution-like vector interpolation for refine <- Use SolutionTransfer class
+- [ ] Deal.ii RK45 iterator support
 
-[x] Scalar field output class
-
-[ ] Electrons emission possibility
-
-[ ] Add right hand side in cyllindric geometry for poisson
-
-[ ] Fix laplacian for cylliongric geomentry
-
-[ ] Add output hook
 
 ### Low priority
 
-[x] Manifold ids for grid near the needle
+- [x] Manifold ids for grid near the needle
 
-[ ] Manifold ids for boundary -- ask Fedor
+- [ ] Manifold ids for boundary -- ask Fedor
 
-[x] Laplacian output test
+- [x] Laplacian output test

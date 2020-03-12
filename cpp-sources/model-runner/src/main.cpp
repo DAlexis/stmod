@@ -66,15 +66,37 @@ int main()
     Electrons elec(fe_res);
     elec.init();
 
+    FieldAssigner fa(fe_res.dof_handler());
+    fa.assign_fiend(
+        elec.value_w(),
+        [](const dealii::Point<2>& point) -> double
+        {
+            return exp(-pow((point[0]-0.008) / 0.002, 2.0));
+            //return 0.5;
+            //return exp(-point[0] / 0.002 * ());
+            /*if (point[0] < 0.001)
+                return 1.0;
+            else
+                return 0.0;*/
+            //return point[0];
+        }
+    );
 
     FractionsOutputMaker output_maker;
     output_maker.add(&pot);
     output_maker.add(&elec);
 
     pot.solve();
-    elec.solve();
+    //elec.solve();
 
-    output_maker.output(fe_res.dof_handler(), "frac-out.vtu");
+    for (int i = 0; i < 1000; i++)
+    {
+        elec.solve();
+        elec.value_w().add(0.00000005, elec.derivative());
+        output_maker.output(fe_res.dof_handler(), "frac-out-iter-" + std::to_string(i) + ".vtu");
+    }
+
+
 
     /*ModelOne model;
     model.output_fractions("fractions.vtk");

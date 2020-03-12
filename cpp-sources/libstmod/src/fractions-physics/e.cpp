@@ -55,14 +55,27 @@ Electrons::Electrons(const FEResources& fe_res) :
 {
 }
 
-const std::string& Electrons::name() const
+const std::string& Electrons::name(size_t index) const
 {
-    return m_name;
+    return m_names[index];
 }
 
-const dealii::Vector<double>& Electrons::value() const
+const dealii::Vector<double>& Electrons::value(size_t index) const
 {
-    return m_concentration;
+    switch (index)
+    {
+    case 0:
+        return m_concentration;
+    case 1:
+        return m_derivative;
+    default:
+        throw std::range_error("Electrons::value(): invalid quantity index");
+    };
+}
+
+size_t Electrons::values_count() const
+{
+    return 2;
 }
 
 const dealii::Vector<double>& Electrons::derivative() const
@@ -70,7 +83,7 @@ const dealii::Vector<double>& Electrons::derivative() const
     return m_derivative;
 }
 
-dealii::Vector<double>& value_w() const
+dealii::Vector<double>& Electrons::value_w()
 {
     return m_concentration;
 }
@@ -124,6 +137,7 @@ void Electrons::assemble_system()
 
     m_tmp = 0;
     m_fe_res.r_laplace_matrix_axial().vmult(m_tmp, m_concentration);
+    //m_fe_res.laplace_matrix().vmult(m_tmp, m_concentration);
 
     m_system_rhs.add(parameters.D_e, m_tmp);
 }
@@ -131,12 +145,13 @@ void Electrons::assemble_system()
 void Electrons::solve_lin_eq()
 {
     m_fe_res.lin_eq_solver().solve(
-                m_system_matrix, m_concentration, m_system_rhs,
-                1e-2, m_name);
+                m_system_matrix, m_derivative_without_single_point, m_system_rhs,
+                5e-3, "Electrons");
 }
 
 void Electrons::add_single_point_derivative()
 {
+    m_derivative = m_derivative_without_single_point;
     for (size_t i = 0; i < m_single_sources.size(); i++)
     {
         m_derivative.add(m_single_reaction_consts[i], (*m_single_sources[i]));

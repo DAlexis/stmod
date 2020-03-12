@@ -69,7 +69,7 @@ void ElectricPotential::solve_lin_eq()
 
     m_fe_res.lin_eq_solver().solve(
                 m_system_matrix, m_solution, m_system_rhs,
-                (fabs(m_bottom_potential) + fabs(m_needle_potential)), m_name);
+                (fabs(m_bottom_potential) + fabs(m_needle_potential))*0.000005, m_name);
     /*
     std::cout << "Potential: Solving linear equations" << std::endl;
     SolverControl solver_control(5000, 1e-2 * (fabs(m_bottom_potential) + fabs(m_needle_potential)));
@@ -79,14 +79,19 @@ void ElectricPotential::solve_lin_eq()
     m_fe_res.constraints().distribute(m_solution);*/
 }
 
-const std::string& ElectricPotential::name() const
+const std::string& ElectricPotential::name(size_t) const
 {
     return m_name;
 }
 
-const dealii::Vector<double>& ElectricPotential::value() const
+const dealii::Vector<double>& ElectricPotential::value(size_t) const
 {
     return m_solution;
+}
+
+size_t ElectricPotential::values_count() const
+{
+    return 1;
 }
 
 void ElectricPotential::add_charge(const dealii::Vector<double>& charge_vector, double mul)

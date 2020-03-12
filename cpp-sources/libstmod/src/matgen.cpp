@@ -53,13 +53,14 @@ void create_r_laplace_matrix_axial(
         const dealii::DoFHandler<2, 2>& dof_handler,
         dealii::SparseMatrix<double> &sparse_matrix,
         const dealii::AffineConstraints<double> & constraints,
-        const dealii::Quadrature<2> & quadrature)
+        const dealii::Quadrature<2> & quadrature,
+        double r_epsilon)
 {
     auto &fe = dof_handler.get_fe();
 
     FEValues<2, 2> fe_values(fe, quadrature,
                           update_values | update_gradients |
-                          update_quadrature_points | update_JxW_values);
+                          update_quadrature_points | update_JxW_values | update_jacobians);
 
     const unsigned int dofs_per_cell = fe.dofs_per_cell;
     const unsigned int n_q_points    = quadrature.size();
@@ -74,6 +75,7 @@ void create_r_laplace_matrix_axial(
         {
             const auto x_q = fe_values.quadrature_point(q_index);
             const double r = x_q[0];
+            const double z = x_q[1];
             for (unsigned int i = 0; i < dofs_per_cell; ++i)
             {
                 for (unsigned int j = 0; j < dofs_per_cell; ++j)
@@ -86,9 +88,9 @@ void create_r_laplace_matrix_axial(
 
                     cell_matrix(i, j) +=
                         (
-                            grad_psi_i[0] * psi_j +
-                            grad_psi_i[0] * (psi_j + r * grad_psi_j[0]) + grad_psi_i[1] * grad_psi_j[1]
+                            - grad_psi_i * grad_psi_j * (r + r_epsilon)
                         ) * fe_values.JxW(q_index);
+
                 }
             }
         }
@@ -101,7 +103,8 @@ void create_r_mass_matrix_axial(
         const dealii::DoFHandler<2, 2>& dof_handler,
         dealii::SparseMatrix<double> &sparse_matrix,
         const dealii::AffineConstraints<double> & constraints,
-        const dealii::Quadrature<2> & quadrature)
+        const dealii::Quadrature<2> & quadrature,
+        double r_epsilon)
 {
     auto &fe = dof_handler.get_fe();
 
@@ -130,7 +133,7 @@ void create_r_mass_matrix_axial(
 
                     cell_matrix(i, j) +=
                         (
-                            psi_i * r * psi_j
+                            psi_i * (r + r_epsilon) * psi_j
                         ) * fe_values.JxW(q_index);
                 }
             }
@@ -140,60 +143,11 @@ void create_r_mass_matrix_axial(
     }
 }
 
-void create_mass_matrix_axial(
-        const dealii::DoFHandler<2, 2>& dof_handler,
-        dealii::SparseMatrix<double> &sparse_matrix,
-        const dealii::AffineConstraints<double> & constraints,
-        const dealii::Quadrature<2> & quadrature)
-{
-    auto &fe = dof_handler.get_fe();
-
-    FEValues<2, 2> fe_values(fe, quadrature,
-                          update_values | update_gradients |
-                          update_quadrature_points | update_JxW_values);
-
-    const unsigned int dofs_per_cell = fe.dofs_per_cell;
-    const unsigned int n_q_points    = quadrature.size();
-    FullMatrix<double> cell_matrix(dofs_per_cell, dofs_per_cell);
-    std::vector<types::global_dof_index> local_dof_indices(dofs_per_cell);
-
-    for (const auto &cell : dof_handler.active_cell_iterators())
-    {
-        cell_matrix = 0;
-        fe_values.reinit(cell);
-        for (unsigned int q_index = 0; q_index < n_q_points; ++q_index)
-        {
-            const auto x_q = fe_values.quadrature_point(q_index);
-            const double r = x_q[0];
-            for (unsigned int i = 0; i < dofs_per_cell; ++i)
-            {
-                for (unsigned int j = 0; j < dofs_per_cell; ++j)
-                {
-                    cell_matrix(i, j) += (
-                        fe_values.shape_value(i, q_index) * // phi_i(x_q)
-                        fe_values.shape_value(j, q_index) * // phi_j(x_q)
-                        r *                                 // r
-                        fe_values.JxW(q_index)              // dx
-                    );
-                }
-            }
-        }
-        cell->get_dof_indices(local_dof_indices);
-        /*for (unsigned int i = 0; i < dofs_per_cell; ++i)
-        {
-          for (unsigned int j = 0; j < dofs_per_cell; ++j)
-            sparse_matrix.add(local_dof_indices[i],
-                              local_dof_indices[j],
-                              cell_matrix(i, j));
-        }*/
-        constraints.distribute_local_to_global(cell_matrix, local_dof_indices, sparse_matrix);
-    }
-}
-
 void create_phi_i_phi_j_dot_r_phi_k(
         const dealii::DoFHandler<2, 2>& dof_handler,
         SparseTensor3& tensor,
-        const dealii::Quadrature<2> & quadrature)
+        const dealii::Quadrature<2> & quadrature,
+        double r_epsilon)
 {
     auto &fe = dof_handler.get_fe();
 
@@ -225,7 +179,7 @@ void create_phi_i_phi_j_dot_r_phi_k(
                             fe_values.shape_value(i, q_index) *   // phi_i(x_q)
                             fe_values.shape_value(j, q_index) *   // phi_j(x_q)
                             fe_values.shape_value(k, q_index) *   // phi_k(x_q)
-                            r *                                   // r
+                            (r + r_epsilon) *                     // r
                             fe_values.JxW(q_index)                // dx
                         );
                     }
@@ -253,7 +207,8 @@ void create_phi_i_phi_j_dot_r_phi_k(
 void create_grad_phi_i_grad_phi_j_dot_r_phi_k(
         const dealii::DoFHandler<2, 2>& dof_handler,
         SparseTensor3& tensor,
-        const dealii::Quadrature<2> & quadrature)
+        const dealii::Quadrature<2> & quadrature,
+        double r_epsilon)
 {
     auto &fe = dof_handler.get_fe();
 
@@ -285,7 +240,7 @@ void create_grad_phi_i_grad_phi_j_dot_r_phi_k(
                             fe_values.shape_grad(i, q_index) *   // grad phi_i(x_q)
                             fe_values.shape_grad(j, q_index) *   // grad phi_j(x_q)
                             fe_values.shape_value(k, q_index) *   // phi_k(x_q)
-                            r *                                   // r
+                            (r + r_epsilon) *                     // r
                             fe_values.JxW(q_index)                // dx
                         );
                     }
