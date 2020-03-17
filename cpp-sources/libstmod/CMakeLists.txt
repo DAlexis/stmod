@@ -23,7 +23,8 @@ set(LIB_SOURCE
     ${PROJECT_SOURCE_DIR}/src/lin-eq-solver.cpp
     ${PROJECT_SOURCE_DIR}/src/fractions-physics/e.cpp
     ${PROJECT_SOURCE_DIR}/src/fractions-physics/electric-potential.cpp
-    ${PROJECT_SOURCE_DIR}/src/full-models/model-one.cpp
+	${PROJECT_SOURCE_DIR}/src/full-models/model-one.cpp
+	${PROJECT_SOURCE_DIR}/src/time-iter.cpp
 )
 
 set(LIB_HPP
@@ -44,7 +45,8 @@ set(LIB_HPP
     ${PROJECT_SOURCE_DIR}/stmod/fractions-physics/e.hpp
     ${PROJECT_SOURCE_DIR}/stmod/fractions-physics/electric-potential.hpp
     ${PROJECT_SOURCE_DIR}/stmod/full-models/model-one.hpp
-    ${PROJECT_SOURCE_DIR}/stmod/phys-consts.hpp
+	${PROJECT_SOURCE_DIR}/stmod/phys-consts.hpp
+	${PROJECT_SOURCE_DIR}/stmod/time-iter.hpp
 )
 
 add_library(${PROJECT_NAME} STATIC ${LIB_SOURCE} ${LIB_HPP})
