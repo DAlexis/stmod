@@ -35,7 +35,7 @@ set(LIB_HPP
     ${PROJECT_SOURCE_DIR}/stmod/fe-sampler.hpp
     ${PROJECT_SOURCE_DIR}/stmod/field-output.hpp
     ${PROJECT_SOURCE_DIR}/stmod/fractions.hpp
-    ${PROJECT_SOURCE_DIR}/stmod/fractions-base.hpp
+    ${PROJECT_SOURCE_DIR}/stmod/output-provider.hpp
     ${PROJECT_SOURCE_DIR}/stmod/matgen.hpp
     ${PROJECT_SOURCE_DIR}/stmod/tensors.hpp
     ${PROJECT_SOURCE_DIR}/stmod/mesh.hpp
@@ -46,7 +46,8 @@ set(LIB_HPP
     ${PROJECT_SOURCE_DIR}/stmod/fractions-physics/electric-potential.hpp
     ${PROJECT_SOURCE_DIR}/stmod/full-models/model-one.hpp
 	${PROJECT_SOURCE_DIR}/stmod/phys-consts.hpp
-	${PROJECT_SOURCE_DIR}/stmod/time-iter.hpp
+    ${PROJECT_SOURCE_DIR}/stmod/steppable.hpp
+    ${PROJECT_SOURCE_DIR}/stmod/time-iter.hpp
 )
 
 add_library(${PROJECT_NAME} STATIC ${LIB_SOURCE} ${LIB_HPP})

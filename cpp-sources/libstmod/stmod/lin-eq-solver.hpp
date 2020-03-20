@@ -22,7 +22,7 @@ public:
 public:
     const dealii::AffineConstraints<double>& m_constraints;
     double m_precision;
-    unsigned int m_iterations_count_max = 5000;
+    unsigned int m_iterations_count_max = 15000;
 };
 
 #endif // LIN_EQ_SOLVER_HPP_INCLUDED

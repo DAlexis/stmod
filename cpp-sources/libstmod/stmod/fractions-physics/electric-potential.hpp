@@ -1,10 +1,11 @@
 #ifndef ELECTRIC_POTENTIAL_HPP_INCLUDED
 #define ELECTRIC_POTENTIAL_HPP_INCLUDED
 
-#include "stmod/fractions-base.hpp"
+#include "stmod/output-provider.hpp"
+#include "stmod/steppable.hpp"
 #include "stmod/fe-common.hpp"
 
-class ElectricPotential : public IFractionData
+class ElectricPotential : public IOutputProvider
 {
 public:
     ElectricPotential(const FEResources& fe_res);
@@ -13,9 +14,9 @@ public:
 
     void solve();
 
-    const std::string& name(size_t index) const override;
-    const dealii::Vector<double>& value(size_t index) const override;
-    virtual size_t values_count() const override;
+    const std::string& output_name(size_t index) const override;
+    const dealii::Vector<double>& output_value(size_t index) const override;
+    virtual size_t output_values_count() const override;
 
     void add_charge(const dealii::Vector<double>& charge_vector, double mul = 1.0);
 

@@ -2,7 +2,9 @@
 #define FRACTIONS_PHYSICS_E_HPP_INCLUDED
 
 #include "stmod/fractions.hpp"
-#include "stmod/fractions-base.hpp"
+#include "stmod/output-provider.hpp"
+#include "stmod/steppable.hpp"
+
 #include "stmod/fe-common.hpp"
 
 #include <deal.II/dofs/dof_handler.h>
@@ -71,17 +73,23 @@ struct ElectronsParameters
     double D_e = 0.1; // m^2 s^-1
 };
 
-class Electrons : public IFractionData
+class Electrons : public IOutputProvider, public ISteppable
 {
 public:
     Electrons(const FEResources& fe_res);
 
     void init();
-    void solve();
 
-    const std::string& name(size_t index) const override;
-    const dealii::Vector<double>& value(size_t index) const override;
-    virtual size_t values_count() const override;
+    // IOutputProvider
+    const std::string& output_name(size_t index) const override;
+    const dealii::Vector<double>& output_value(size_t index) const override;
+    virtual size_t output_values_count() const override;
+
+    // ISteppable
+    dealii::Vector<double>& values_vector() override;
+    const dealii::Vector<double>& derivatives_vector() const override;
+    void compute(double t) override;
+
     const dealii::Vector<double>& derivative() const;
 
     dealii::Vector<double>& value_w();

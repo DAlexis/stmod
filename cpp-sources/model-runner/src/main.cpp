@@ -24,6 +24,7 @@
 #include "stmod/fractions-physics/e.hpp"
 #include "stmod/fractions-physics/electric-potential.hpp"
 #include "stmod/mesh-output.hpp"
+#include "stmod/time-iter.hpp"
 
 #include "stmod/full-models/model-one.hpp"
 #include "stmod/fe-common.hpp"
@@ -89,11 +90,29 @@ int main()
     pot.solve();
     //elec.solve();
 
-    for (int i = 0; i < 1000; i++)
+    VariablesCollector var_coll;
+    var_coll.add_steppable(&elec);
+
+    StmodTimeStepper stepper;
+    stepper.init();
+
+    double t = 0;
+    double dt = 1e-5;
+    for (int i = 0; i < 100000; i++)
     {
-        elec.solve();
+        /*elec.compute(0.0);
         elec.value_w().add(0.00000005, elec.derivative());
-        output_maker.output(fe_res.dof_handler(), "frac-out-iter-" + std::to_string(i) + ".vtu");
+        */
+        std::cout << "Iteration " << i << "; t = " << t << "... " << std::flush;
+        //double dt = stepper.iterate(var_coll, t, 5e-9);
+
+        double t_new = stepper.iterate(var_coll, t, dt);
+        dt = t_new - t;
+        t = t_new;
+        std::cout << "dt = " << dt << std::endl;
+
+        if (i % 100 == 0)
+            output_maker.output(fe_res.dof_handler(), "frac-out-iter-" + std::to_string(i) + ".vtu");
     }
 
 

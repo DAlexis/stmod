@@ -79,17 +79,17 @@ void ElectricPotential::solve_lin_eq()
     m_fe_res.constraints().distribute(m_solution);*/
 }
 
-const std::string& ElectricPotential::name(size_t) const
+const std::string& ElectricPotential::output_name(size_t) const
 {
     return m_name;
 }
 
-const dealii::Vector<double>& ElectricPotential::value(size_t) const
+const dealii::Vector<double>& ElectricPotential::output_value(size_t) const
 {
     return m_solution;
 }
 
-size_t ElectricPotential::values_count() const
+size_t ElectricPotential::output_values_count() const
 {
     return 1;
 }

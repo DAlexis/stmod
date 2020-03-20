@@ -26,10 +26,10 @@ void ElectronsRHS::calculate_rhs(double time)
     // Sampling n_e gradient and laplacian
     electrons_sampler.sample(ne_current);
 
-    const std::vector<dealii::Point<2>>& e_field = field_sampler.gradients();
+    /*const std::vector<dealii::Point<2>>& e_field = field_sampler.gradients();
     const std::vector<dealii::Point<2>>& n_grad = electrons_sampler.gradients();
     const std::vector<double>& n_laplacians =  electrons_sampler.laplacians();
-
+*/
     for (unsigned int i = 0; i < ne_current.size(); i++)
     {
         ne_rhs[i] = 1e6;//constants.D_e * n_laplacians[i];
@@ -55,12 +55,12 @@ Electrons::Electrons(const FEResources& fe_res) :
 {
 }
 
-const std::string& Electrons::name(size_t index) const
+const std::string& Electrons::output_name(size_t index) const
 {
     return m_names[index];
 }
 
-const dealii::Vector<double>& Electrons::value(size_t index) const
+const dealii::Vector<double>& Electrons::output_value(size_t index) const
 {
     switch (index)
     {
@@ -73,9 +73,26 @@ const dealii::Vector<double>& Electrons::value(size_t index) const
     };
 }
 
-size_t Electrons::values_count() const
+size_t Electrons::output_values_count() const
 {
     return 2;
+}
+
+dealii::Vector<double>& Electrons::values_vector()
+{
+    return m_concentration;
+}
+
+const dealii::Vector<double>& Electrons::derivatives_vector() const
+{
+    return m_derivative;
+}
+
+void Electrons::compute(double t)
+{
+    assemble_system();
+    solve_lin_eq();
+    add_single_point_derivative();
 }
 
 const dealii::Vector<double>& Electrons::derivative() const
@@ -119,14 +136,6 @@ void Electrons::init()
     m_system_matrix.copy_from(m_fe_res.r_mass_matrix());
 }
 
-void Electrons::solve()
-{
-    assemble_system();
-    solve_lin_eq();
-    add_single_point_derivative();
-}
-
-
 void Electrons::assemble_system()
 {    
     m_system_rhs = 0;
@@ -144,9 +153,10 @@ void Electrons::assemble_system()
 
 void Electrons::solve_lin_eq()
 {
-    m_fe_res.lin_eq_solver().solve(
+    m_fe_res.inverse_r_mass_matrix().vmult(m_derivative_without_single_point, m_system_rhs);
+    /*m_fe_res.lin_eq_solver().solve(
                 m_system_matrix, m_derivative_without_single_point, m_system_rhs,
-                5e-3, "Electrons");
+                1e-8, "Electrons");*/
 }
 
 void Electrons::add_single_point_derivative()

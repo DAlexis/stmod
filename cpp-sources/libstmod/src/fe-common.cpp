@@ -79,6 +79,9 @@ void FEResources::init()
             m_dof_handler,
             m_grad_phi_i_grad_phi_j_dot_r_phi_k,
             QGauss<2>(3 * m_fe.degree + 1));
+
+    std::cout << "Creating m_inverse_r_mass_matrix..." << std::endl;
+    m_inverse_r_mass_matrix.initialize(m_r_mass_matrix);
     std::cout << "All matrixes and tensors created" << std::endl;
 }
 
@@ -100,6 +103,11 @@ const dealii::SparseMatrix<double>& FEResources::r_laplace_matrix_axial() const
 const dealii::SparseMatrix<double>& FEResources::r_mass_matrix() const
 {
     return m_r_mass_matrix;
+}
+
+const dealii::SparseDirectUMFPACK& FEResources::inverse_r_mass_matrix() const
+{
+    return m_inverse_r_mass_matrix;
 }
 
 const SparseTensor3& FEResources::phi_i_phi_j_dot_r_phi_k() const
