@@ -122,7 +122,7 @@ void Electrons::set_potential(const dealii::Vector<double>& potential)
     m_potential = &potential;
 }
 
-void Electrons::init()
+void Electrons::init_mesh_dependent()
 {
     m_system_rhs.reinit(m_fe_res.dof_handler().n_dofs());
 
@@ -130,10 +130,11 @@ void Electrons::init()
     m_derivative.reinit(m_fe_res.dof_handler().n_dofs());
     m_derivative_without_single_point.reinit(m_fe_res.dof_handler().n_dofs());
     m_tmp.reinit(m_fe_res.dof_handler().n_dofs());
+}
 
-    m_system_matrix.reinit(m_fe_res.sparsity_pattern());
-
-    m_system_matrix.copy_from(m_fe_res.r_mass_matrix());
+const dealii::Vector<double>& Electrons::error_estimation_vector() const
+{
+    return m_concentration;
 }
 
 void Electrons::assemble_system()

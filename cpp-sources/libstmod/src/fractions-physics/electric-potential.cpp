@@ -14,8 +14,19 @@ ElectricPotential::ElectricPotential(const FEResources& fe_res) :
 {
 }
 
-void ElectricPotential::init(double needle_potential, double bottom_potential)
+dealii::Vector<double>& ElectricPotential::values_vector()
 {
+    return m_solution;
+}
+
+const dealii::Vector<double>& ElectricPotential::error_estimation_vector() const
+{
+    return m_solution;
+}
+
+void ElectricPotential::init_mesh_dependent()
+{
+    const double needle_potential = 7; const double bottom_potential = 2;
     m_needle_potential = needle_potential;
     m_bottom_potential = bottom_potential;
 

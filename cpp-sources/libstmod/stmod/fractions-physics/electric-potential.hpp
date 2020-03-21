@@ -1,16 +1,22 @@
 #ifndef ELECTRIC_POTENTIAL_HPP_INCLUDED
 #define ELECTRIC_POTENTIAL_HPP_INCLUDED
 
-#include "stmod/output-provider.hpp"
-#include "stmod/steppable.hpp"
+#include "stmod/i-output-provider.hpp"
+#include "stmod/i-steppable.hpp"
+#include "stmod/i-mesh-based.hpp"
 #include "stmod/fe-common.hpp"
 
-class ElectricPotential : public IOutputProvider
+class ElectricPotential : public IOutputProvider, public IMeshBased
 {
 public:
     ElectricPotential(const FEResources& fe_res);
 
-    void init(double needle_potential = 7, double bottom_potential = 2);
+    // IVariablesStorage
+    virtual dealii::Vector<double>& values_vector() override;
+
+    // IMeshBased
+    void init_mesh_dependent() override;
+    const dealii::Vector<double>& error_estimation_vector() const override;
 
     void solve();
 

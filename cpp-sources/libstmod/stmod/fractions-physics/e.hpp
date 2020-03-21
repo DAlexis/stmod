@@ -2,8 +2,9 @@
 #define FRACTIONS_PHYSICS_E_HPP_INCLUDED
 
 #include "stmod/fractions.hpp"
-#include "stmod/output-provider.hpp"
-#include "stmod/steppable.hpp"
+#include "stmod/i-output-provider.hpp"
+#include "stmod/i-steppable.hpp"
+#include "stmod/i-mesh-based.hpp"
 
 #include "stmod/fe-common.hpp"
 
@@ -73,12 +74,17 @@ struct ElectronsParameters
     double D_e = 0.1; // m^2 s^-1
 };
 
-class Electrons : public IOutputProvider, public ISteppable
+class Electrons : public IOutputProvider, public ISteppable, public IMeshBased
 {
 public:
     Electrons(const FEResources& fe_res);
 
-    void init();
+    // IVariablesStorage
+    dealii::Vector<double>& values_vector() override;
+
+    // IMeshBased
+    void init_mesh_dependent() override;
+    const dealii::Vector<double>& error_estimation_vector() const override;
 
     // IOutputProvider
     const std::string& output_name(size_t index) const override;
@@ -86,7 +92,6 @@ public:
     virtual size_t output_values_count() const override;
 
     // ISteppable
-    dealii::Vector<double>& values_vector() override;
     const dealii::Vector<double>& derivatives_vector() const override;
     void compute(double t) override;
 
@@ -109,7 +114,6 @@ private:
 
     const FEResources& m_fe_res;
 
-    dealii::SparseMatrix<double> m_system_matrix;
     dealii::Vector<double> m_system_rhs;
     dealii::Vector<double> m_concentration;
     dealii::Vector<double> m_derivative;

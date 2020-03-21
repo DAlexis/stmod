@@ -1,7 +1,14 @@
 #include "stmod/time-iter.hpp"
+#include <deal.II/lac/affine_constraints.h>
+
 #include <stdexcept>
 
 using namespace dealii;
+
+VariablesCollector::VariablesCollector(const dealii::AffineConstraints<double>& constraints) :
+    m_constraints(constraints)
+{
+}
 
 void VariablesCollector::add_steppable(ISteppable* steppable)
 {
@@ -28,6 +35,8 @@ void VariablesCollector::push_values()
         copy_vector_part(target_vector, 0, target_vector.size(),
                          m_values, current_offset);
         current_offset += target_vector.size();
+
+        m_constraints.distribute(target_vector);
     }
 }
 

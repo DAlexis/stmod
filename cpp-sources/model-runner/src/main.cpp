@@ -25,6 +25,7 @@
 #include "stmod/fractions-physics/electric-potential.hpp"
 #include "stmod/mesh-output.hpp"
 #include "stmod/time-iter.hpp"
+#include "stmod/mesh-refiner.hpp"
 
 #include "stmod/full-models/model-one.hpp"
 #include "stmod/fe-common.hpp"
@@ -62,10 +63,10 @@ int main()
     fe_res.init();
 
     ElectricPotential pot(fe_res);
-    pot.init();
+    pot.init_mesh_dependent();
 
     Electrons elec(fe_res);
-    elec.init();
+    elec.init_mesh_dependent();
 
     FieldAssigner fa(fe_res.dof_handler());
     fa.assign_fiend(
@@ -83,6 +84,11 @@ int main()
         }
     );
 
+    MeshRefiner refiner(fe_res);
+    refiner.add_mesh_based(&elec);
+    refiner.add_mesh_based(&pot);
+
+
     FractionsOutputMaker output_maker;
     output_maker.add(&pot);
     output_maker.add(&elec);
@@ -90,15 +96,23 @@ int main()
     pot.solve();
     //elec.solve();
 
-    VariablesCollector var_coll;
+    VariablesCollector var_coll(fe_res.constraints());
     var_coll.add_steppable(&elec);
 
     StmodTimeStepper stepper;
     stepper.init();
 
+    output_maker.output(fe_res.dof_handler(), "frac-out-iter-" + std::to_string(0) + ".vtu");
+    refiner.do_refine();
+    refiner.do_refine();
+    refiner.do_refine();
+    refiner.do_refine();
+    output_maker.output(fe_res.dof_handler(), "frac-out-iter-" + std::to_string(1) + ".vtu");
+
     double t = 0;
     double dt = 1e-5;
-    for (int i = 0; i < 100000; i++)
+    double last_output_t = t;
+    for (int i = 0; i < 10000; i++)
     {
         /*elec.compute(0.0);
         elec.value_w().add(0.00000005, elec.derivative());
@@ -111,8 +125,16 @@ int main()
         t = t_new;
         std::cout << "dt = " << dt << std::endl;
 
-        if (i % 100 == 0)
-            output_maker.output(fe_res.dof_handler(), "frac-out-iter-" + std::to_string(i) + ".vtu");
+        //if (i % 100 == 0)
+        if (t - last_output_t >= 5e-9)
+        {
+            output_maker.output(fe_res.dof_handler(), "frac-out-iter-" + std::to_string(i+2) + ".vtu");
+            last_output_t = t;
+        }
+        if (i % 10 == 0 || i < 10)
+            refiner.do_refine();
+
+
     }
 
 

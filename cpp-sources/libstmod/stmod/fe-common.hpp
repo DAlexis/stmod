@@ -19,6 +19,8 @@ public:
 
     void init();
 
+    dealii::Triangulation<2>& triangulation();
+
     const dealii::DoFHandler<2>& dof_handler() const;
     const dealii::SparseMatrix<double>& laplace_matrix() const;
 
@@ -34,6 +36,7 @@ public:
     const dealii::SparseMatrix<double>& r_mass_matrix() const;
 
     const dealii::SparseDirectUMFPACK& inverse_r_mass_matrix() const;
+    const dealii::SparseDirectUMFPACK& inverse_r_laplace_matrix() const;
 
     const SparseTensor3& phi_i_phi_j_dot_r_phi_k() const;
     const SparseTensor3& grad_phi_i_grad_phi_j_dot_r_phi_k() const;
@@ -58,10 +61,11 @@ private:
 
     dealii::SparseMatrix<double> m_mass_matrix;
     dealii::SparseMatrix<double> m_laplace_matrix;
-    dealii::SparseMatrix<double> m_r_laplace_matrix_axial;
+    dealii::SparseMatrix<double> m_r_laplace_matrix;
     dealii::SparseMatrix<double> m_r_mass_matrix;
 
     dealii::SparseDirectUMFPACK m_inverse_r_mass_matrix;
+    dealii::SparseDirectUMFPACK m_inverse_r_laplace_matrix;
 
     SparseTensor3 m_phi_i_phi_j_dot_r_phi_k;
     SparseTensor3 m_grad_phi_i_grad_phi_j_dot_r_phi_k;

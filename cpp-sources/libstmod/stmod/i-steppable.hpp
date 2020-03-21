@@ -1,15 +1,17 @@
-#ifndef STEPPABLE_HPP_INCLUDED
-#define STEPPABLE_HPP_INCLUDED
+#ifndef I_STEPPABLE_HPP_INCLUDED
+#define I_STEPPABLE_HPP_INCLUDED
+
+#include "stmod/i-variables-storage.hpp"
 
 #include <deal.II/lac/vector.h>
 
-class ISteppable
+class ISteppable : public IVariablesStorage
 {
 public:
-    virtual dealii::Vector<double>& values_vector() = 0;
     virtual const dealii::Vector<double>& derivatives_vector() const = 0;
     virtual void compute(double t) = 0;
+
     virtual ~ISteppable() = default;
 };
 
-#endif // STEPPABLE_HPP_INCLUDED
+#endif // I_STEPPABLE_HPP_INCLUDED

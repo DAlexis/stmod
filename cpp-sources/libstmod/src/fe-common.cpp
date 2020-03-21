@@ -33,7 +33,7 @@ void FEResources::init()
 
     m_mass_matrix.reinit(m_sparsity_pattern);
     m_laplace_matrix.reinit(m_sparsity_pattern);
-    m_r_laplace_matrix_axial.reinit(m_sparsity_pattern);
+    m_r_laplace_matrix.reinit(m_sparsity_pattern);
     m_r_mass_matrix.reinit(m_sparsity_pattern);
 
     m_phi_i_phi_j_dot_r_phi_k.clear();
@@ -58,7 +58,7 @@ void FEResources::init()
 
     std::cout << "Creating r-laplace matrix..." << std::endl;
     create_r_laplace_matrix_axial(m_dof_handler,
-                               m_r_laplace_matrix_axial,
+                               m_r_laplace_matrix,
                                m_constraints,
                                QGauss<2>(2 * m_fe.degree + 1));
 
@@ -80,10 +80,19 @@ void FEResources::init()
             m_grad_phi_i_grad_phi_j_dot_r_phi_k,
             QGauss<2>(3 * m_fe.degree + 1));
 
-    std::cout << "Creating m_inverse_r_mass_matrix..." << std::endl;
+    std::cout << "Creating inverse_r_mass_matrix..." << std::endl;
     m_inverse_r_mass_matrix.initialize(m_r_mass_matrix);
+
+    std::cout << "Creating inverse_r_laplace_matrix..." << std::endl;
+    m_inverse_r_laplace_matrix.initialize(m_r_laplace_matrix);
     std::cout << "All matrixes and tensors created" << std::endl;
 }
+
+dealii::Triangulation<2>& FEResources::triangulation()
+{
+    return m_triangulation;
+}
+
 
 const dealii::DoFHandler<2>& FEResources::dof_handler() const
 {
@@ -97,7 +106,7 @@ const dealii::SparseMatrix<double>& FEResources::laplace_matrix() const
 
 const dealii::SparseMatrix<double>& FEResources::r_laplace_matrix_axial() const
 {
-    return m_r_laplace_matrix_axial;
+    return m_r_laplace_matrix;
 }
 
 const dealii::SparseMatrix<double>& FEResources::r_mass_matrix() const
@@ -108,6 +117,11 @@ const dealii::SparseMatrix<double>& FEResources::r_mass_matrix() const
 const dealii::SparseDirectUMFPACK& FEResources::inverse_r_mass_matrix() const
 {
     return m_inverse_r_mass_matrix;
+}
+
+const dealii::SparseDirectUMFPACK& FEResources::inverse_r_laplace_matrix() const
+{
+    return m_inverse_r_laplace_matrix;
 }
 
 const SparseTensor3& FEResources::phi_i_phi_j_dot_r_phi_k() const

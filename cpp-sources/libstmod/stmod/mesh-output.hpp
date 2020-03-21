@@ -1,7 +1,7 @@
 #ifndef MESH_OUTPUT_HPP_INCLUDED
 #define MESH_OUTPUT_HPP_INCLUDED
 
-#include "stmod/output-provider.hpp"
+#include "stmod/i-output-provider.hpp"
 
 #include <deal.II/dofs/dof_handler.h>
 #include <string>
