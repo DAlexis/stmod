@@ -14,4 +14,12 @@ public:
     virtual ~ISteppable() = default;
 };
 
+class IPreStepJob
+{
+public:
+    virtual void compute(double t) = 0;
+
+    virtual ~IPreStepJob() = default;
+};
+
 #endif // I_STEPPABLE_HPP_INCLUDED

@@ -15,6 +15,8 @@ class VariablesCollector
 public:
     VariablesCollector(const dealii::AffineConstraints<double>& constraints);
     void add_steppable(ISteppable* steppable);
+    void add_pre_step(IPreStepJob* pre_step);
+
     dealii::Vector<double>& all_values();
     const dealii::Vector<double>& all_derivatives() const;
 
@@ -32,6 +34,7 @@ private:
     dealii::Vector<double>::size_type get_total_size();
 
     std::vector<ISteppable*> m_steppables;
+    std::vector<IPreStepJob*> m_pre_step_jobs;
 
     dealii::Vector<double> m_values;
     dealii::Vector<double> m_derivatives;

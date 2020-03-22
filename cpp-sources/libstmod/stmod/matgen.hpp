@@ -9,15 +9,28 @@
 #include <deal.II/lac/affine_constraints.h>
 #include <deal.II/base/quadrature_lib.h>
 
-void create_laplace_matrix_axial(
-        const dealii::DoFHandler<2, 2>& dof_handler,
-        dealii::SparseMatrix<double> &sparse_matrix,
-        const dealii::AffineConstraints<double> & constraints = dealii::AffineConstraints<double>(),
-        const dealii::Quadrature<2> & quadrature = dealii::QGauss<2>(/*degree = */ 3));
-
+// Version without rhs
 void create_r_laplace_matrix_axial(
         const dealii::DoFHandler<2, 2>& dof_handler,
         dealii::SparseMatrix<double> &sparse_matrix,
+        const dealii::AffineConstraints<double> & constraints = dealii::AffineConstraints<double>(),
+        const dealii::Quadrature<2> & quadrature = dealii::QGauss<2>(/*degree = */ 3),
+        double r_epsilon = 1e-4);
+
+/**
+ * @brief Function version with RHS. This means function creates RHS vector with ONLY boundary
+ * conditions and zeros in anoter places
+ * @param dof_handler
+ * @param sparse_matrix
+ * @param rhs
+ * @param constraints
+ * @param quadrature
+ * @param r_epsilon
+ */
+void create_r_laplace_matrix_axial(
+        const dealii::DoFHandler<2, 2>& dof_handler,
+        dealii::SparseMatrix<double> &sparse_matrix,
+        dealii::Vector<double>& rhs,
         const dealii::AffineConstraints<double> & constraints = dealii::AffineConstraints<double>(),
         const dealii::Quadrature<2> & quadrature = dealii::QGauss<2>(/*degree = */ 3),
         double r_epsilon = 1e-4);

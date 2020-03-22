@@ -93,10 +93,11 @@ int main()
     output_maker.add(&pot);
     output_maker.add(&elec);
 
-    pot.solve();
+    pot.compute(0.0);
     //elec.solve();
 
     VariablesCollector var_coll(fe_res.constraints());
+    var_coll.add_pre_step(&pot);
     var_coll.add_steppable(&elec);
 
     StmodTimeStepper stepper;
@@ -105,15 +106,17 @@ int main()
     output_maker.output(fe_res.dof_handler(), "frac-out-iter-" + std::to_string(0) + ".vtu");
     refiner.do_refine();
     refiner.do_refine();
-    refiner.do_refine();
-    refiner.do_refine();
+    pot.compute(0.0);
     output_maker.output(fe_res.dof_handler(), "frac-out-iter-" + std::to_string(1) + ".vtu");
 
     double t = 0;
     double dt = 1e-5;
     double last_output_t = t;
-    for (int i = 0; i < 10000; i++)
+    for (int i = 0; i < 1000000; i++)
     {
+        ElectricParameters ep;
+        ep.needle_potential = double(i);
+        pot.set_electric_parameters(ep);
         /*elec.compute(0.0);
         elec.value_w().add(0.00000005, elec.derivative());
         */
@@ -125,12 +128,16 @@ int main()
         t = t_new;
         std::cout << "dt = " << dt << std::endl;
 
-        //if (i % 100 == 0)
+        std::string filename = "frac-out-iter-" + std::to_string(i+2) + ".vtu";
+        std::cout << "Writing " << filename << std::endl;
+        output_maker.output(fe_res.dof_handler(), filename);
+
+        /*
         if (t - last_output_t >= 5e-9)
         {
             output_maker.output(fe_res.dof_handler(), "frac-out-iter-" + std::to_string(i+2) + ".vtu");
             last_output_t = t;
-        }
+        }*/
         if (i % 10 == 0 || i < 10)
             refiner.do_refine();
 

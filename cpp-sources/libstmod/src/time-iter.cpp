@@ -15,6 +15,11 @@ void VariablesCollector::add_steppable(ISteppable* steppable)
     m_steppables.push_back(steppable);
 }
 
+void VariablesCollector::add_pre_step(IPreStepJob* pre_step)
+{
+    m_pre_step_jobs.push_back(pre_step);
+}
+
 dealii::Vector<double>& VariablesCollector::all_values()
 {
     return m_values;
@@ -78,6 +83,12 @@ void VariablesCollector::pull_derivatives()
 void VariablesCollector::compute(double t)
 {
     std::cout << "VariablesCollector::compute for t = " << t << std::endl;
+
+    for (auto pre_step : m_pre_step_jobs)
+    {
+        pre_step->compute(t);
+    }
+
     for (auto steppable : m_steppables)
     {
         steppable->compute(t);
