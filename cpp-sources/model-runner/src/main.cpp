@@ -68,19 +68,14 @@ int main()
     Electrons elec(fe_res);
     elec.init_mesh_dependent();
 
+    pot.add_charge(elec.values_vector());
+
     FieldAssigner fa(fe_res.dof_handler());
     fa.assign_fiend(
         elec.value_w(),
         [](const dealii::Point<2>& point) -> double
         {
-            return exp(-pow((point[0]-0.008) / 0.002, 2.0));
-            //return 0.5;
-            //return exp(-point[0] / 0.002 * ());
-            /*if (point[0] < 0.001)
-                return 1.0;
-            else
-                return 0.0;*/
-            //return point[0];
+            return 15e13*exp(- (pow((point[0]) / 0.002, 2.0) + pow((point[1] - 0.012 ) / 0.005, 2.0)));
         }
     );
 
@@ -109,14 +104,13 @@ int main()
     pot.compute(0.0);
     output_maker.output(fe_res.dof_handler(), "frac-out-iter-" + std::to_string(1) + ".vtu");
 
+    //return 0.0;
+
     double t = 0;
-    double dt = 1e-5;
+    double dt = 1e-8;
     double last_output_t = t;
-    for (int i = 0; i < 1000000; i++)
+    for (int i = 0; i < 10000000; i++)
     {
-        ElectricParameters ep;
-        ep.needle_potential = double(i);
-        pot.set_electric_parameters(ep);
         /*elec.compute(0.0);
         elec.value_w().add(0.00000005, elec.derivative());
         */
@@ -128,20 +122,15 @@ int main()
         t = t_new;
         std::cout << "dt = " << dt << std::endl;
 
-        std::string filename = "frac-out-iter-" + std::to_string(i+2) + ".vtu";
-        std::cout << "Writing " << filename << std::endl;
-        output_maker.output(fe_res.dof_handler(), filename);
-
-        /*
-        if (t - last_output_t >= 5e-9)
+        if (t - last_output_t >= 1e-8)
         {
-            output_maker.output(fe_res.dof_handler(), "frac-out-iter-" + std::to_string(i+2) + ".vtu");
+            std::string filename = "frac-out-iter-" + std::to_string(i+2) + ".vtu";
+            std::cout << "Writing " << filename << std::endl;
+            output_maker.output(fe_res.dof_handler(), filename);
             last_output_t = t;
-        }*/
-        if (i % 10 == 0 || i < 10)
+        }
+        if (i % 50 == 0 || i < 3)
             refiner.do_refine();
-
-
     }
 
 

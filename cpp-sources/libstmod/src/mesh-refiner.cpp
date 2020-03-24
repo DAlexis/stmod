@@ -54,7 +54,7 @@ void MeshRefiner::update_objects()
 
 void MeshRefiner::estimate()
 {
-    const unsigned int max_grid_level = 4;
+    const unsigned int max_grid_level = 2;
     for (auto &object : m_objects)
     {
         Vector<float> estimated_error_per_cell(m_fe_res.triangulation().n_active_cells());
@@ -69,8 +69,8 @@ void MeshRefiner::estimate()
 
         GridRefinement::refine_and_coarsen_fixed_fraction(m_fe_res.triangulation(),
                                                           estimated_error_per_cell,
-                                                          0.8,
-                                                          0.2);
+                                                          0.5,
+                                                          0.4, 50000);
 
         if (m_fe_res.triangulation().n_levels() > max_grid_level)
         {
@@ -86,17 +86,6 @@ void MeshRefiner::estimate()
             cell->clear_coarsen_flag();
         }*/
     }
-
-/*
-    SolutionTransfer<dim> solution_trans(dof_handler);
-    Vector<double> previous_solution;
-    previous_solution = solution;
-    triangulation.prepare_coarsening_and_refinement();
-    solution_trans.prepare_for_coarsening_and_refinement(previous_solution);
-    triangulation.execute_coarsening_and_refinement();
-    setup_system();
-    solution_trans.interpolate(previous_solution, solution);
-    constraints.distribute(solution);*/
 }
 
 void MeshRefiner::refine_and_transfer()

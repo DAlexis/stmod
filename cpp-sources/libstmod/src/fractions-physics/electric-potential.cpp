@@ -51,12 +51,14 @@ void ElectricPotential::create_rhs()
     m_mass_matrix.vmult(m_system_rhs, m_total_charge);
     m_system_rhs *= - Consts::e / Consts::epsilon_0;
 
+    //m_system_rhs.print();
     // Removing values at boundary conditions position
     m_system_rhs.scale(m_system_rhs_boundary_pattern);
 
+
     // Adding boundary conditions
     m_system_rhs += m_system_rhs_boundary;
-    m_system_rhs = m_system_rhs_boundary;
+    //m_system_rhs = m_system_rhs_boundary;
 }
 
 void ElectricPotential::solve_lin_eq()
@@ -113,12 +115,12 @@ void ElectricPotential::create_system_matrix_and_inverse_matrix()
     m_potential_constraints.clear();
         DoFTools::make_hanging_node_constraints(m_fe_res.dof_handler(), m_potential_constraints);
         VectorTools::interpolate_boundary_values(m_fe_res.dof_handler(),
-                                               1,
+                                               2,
                                                Functions::ConstantFunction<2>(m_electric_parameters.bottom_potential),
                                                m_potential_constraints);
 
         VectorTools::interpolate_boundary_values(m_fe_res.dof_handler(),
-                                               2,
+                                               1,
                                                Functions::ConstantFunction<2>(m_electric_parameters.needle_potential),
                                                m_potential_constraints);
     m_potential_constraints.close();
