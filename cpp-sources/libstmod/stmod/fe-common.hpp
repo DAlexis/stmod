@@ -1,8 +1,9 @@
 #ifndef FE_COMMON_HPP_INCLUDED
 #define FE_COMMON_HPP_INCLUDED
 
-#include "lin-eq-solver.hpp"
-#include "tensors.hpp"
+#include "stmod/lin-eq-solver.hpp"
+#include "stmod/tensors.hpp"
+#include "stmod/utils.hpp"
 
 #include <deal.II/grid/tria.h>
 #include <deal.II/fe/fe_q.h>
@@ -12,17 +13,78 @@
 #include <deal.II/lac/affine_constraints.h>
 #include <deal.II/lac/sparse_direct.h>
 
-class FEResources
+#include <functional>
+/*
+class FEResourcesNew
 {
 public:
-    FEResources(dealii::Triangulation<2>& triangulation, unsigned int degree);
-
-    void init();
+    FEResources(dealii::Triangulation<2>& triangulation, dealii::AffineConstraints<double>& constraints, unsigned int degree);
 
     dealii::Triangulation<2>& triangulation();
 
+    void init();
+
+private:
+    dealii::AffineConstraints<double> m_constraints;
+    LazyInitializerCleaner m_cleaner;
+};*/
+
+class IFEGlobalResourcesUser
+{
+public:
+    virtual void on_triangulation_updated() = 0;
+    virtual ~IFEGlobalResourcesUser() = default;
+};
+
+class FEGlobalResources
+{
+public:
+    FEGlobalResources(dealii::Triangulation<2>& triangulation, unsigned int degree);
+
+    dealii::Triangulation<2>& triangulation();
+    void on_triangulation_updated();
+
+    unsigned int degree() const;
+    const dealii::FE_Q<2>& fe() const;
     const dealii::DoFHandler<2>& dof_handler() const;
+    dealii::types::global_dof_index n_dofs() const;
+    const dealii::SparsityPattern& sparsity_pattern() const;
+    const dealii::AffineConstraints<double>& constraints() const;
+
+    const dealii::SparseMatrix<double>& mass_matrix() const;
     const dealii::SparseMatrix<double>& laplace_matrix() const;
+
+    void add_subscriber(IFEGlobalResourcesUser* subscriber);
+
+private:
+    dealii::Triangulation<2>& m_triangulation;
+    dealii::FE_Q<2> m_fe;
+    dealii::DoFHandler<2> m_dof_handler;
+
+    std::vector<IFEGlobalResourcesUser*> m_subscribers;
+
+    dealii::SparsityPattern m_sparsity_pattern;
+    dealii::AffineConstraints<double> m_constraints;
+
+    LazyInitializerCleaner m_cleaner;
+    LazyInitializer<dealii::SparseMatrix<double>> m_laplace_matrix{m_cleaner};
+    LazyInitializer<dealii::SparseMatrix<double>> m_mass_matrix{m_cleaner};
+};
+
+class FEResources : public IFEGlobalResourcesUser
+{
+public:
+    using BoundaryConditionsGeneratorFunc = std::function<void(dealii::AffineConstraints<double>&)>;
+
+    FEResources(FEGlobalResources& global_resources);
+    dealii::AffineConstraints<double>& constraints();
+
+    void set_boundary_cond_gen(BoundaryConditionsGeneratorFunc gen);
+
+    // IFEGlobalResourcesUser
+    void on_triangulation_updated() override;
+
+    const FEGlobalResources& global_resources() const;
 
     /**
      * @brief Matrix for (d/dr(psi_i), psi_j) + (grad psi_i, grad(r * psi_j)),
@@ -47,28 +109,26 @@ public:
     const LinEqSolver& lin_eq_solver() const;
 
 private:
-    dealii::Triangulation<2>& m_triangulation;
+
+    const FEGlobalResources& m_global_resources;
+    BoundaryConditionsGeneratorFunc m_boundary_conditions_maker_func = nullptr;
+
+    LazyInitializerCleaner m_cleaner;
+
     dealii::AffineConstraints<double> m_constraints;
+
     LinEqSolver m_lin_eq_solver{m_constraints, 1e-2};
 
-    dealii::FE_Q<2>        m_fe;
-    dealii::DoFHandler<2>  m_dof_handler;
     dealii::SparsityPattern  m_sparsity_pattern;
-    dealii::SparseMatrix<double> m_system_matrix;
-    dealii::Vector<double> m_solution;
-    dealii::Vector<double> m_system_rhs;
-    dealii::Vector<float>  m_estimated_error_per_cell;
 
-    dealii::SparseMatrix<double> m_mass_matrix;
-    dealii::SparseMatrix<double> m_laplace_matrix;
-    dealii::SparseMatrix<double> m_r_laplace_matrix;
-    dealii::SparseMatrix<double> m_r_mass_matrix;
+    LazyInitializer<dealii::SparseMatrix<double>> m_r_laplace_matrix{m_cleaner};
+    LazyInitializer<dealii::SparseMatrix<double>> m_r_mass_matrix{m_cleaner};
 
-    dealii::SparseDirectUMFPACK m_inverse_r_mass_matrix;
-    dealii::SparseDirectUMFPACK m_inverse_r_laplace_matrix;
+    LazyInitializer<dealii::SparseDirectUMFPACK> m_inverse_r_mass_matrix{m_cleaner};
+    LazyInitializer<dealii::SparseDirectUMFPACK> m_inverse_r_laplace_matrix{m_cleaner};
 
-    SparseTensor3 m_phi_i_phi_j_dot_r_phi_k;
-    SparseTensor3 m_grad_phi_i_grad_phi_j_dot_r_phi_k;
+    LazyInitializer<SparseTensor3> m_phi_i_phi_j_dot_r_phi_k;
+    LazyInitializer<SparseTensor3> m_grad_phi_i_grad_phi_j_dot_r_phi_k;
 };
 
 #endif // FE_COMMON_HPP_INCLUDED

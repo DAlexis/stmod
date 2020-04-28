@@ -42,19 +42,6 @@ private:
     void init_time_iterator();
 
     std::shared_ptr<Grid> m_grid;
-    std::shared_ptr<PoissonSolver> m_poisson_solver;
-    std::shared_ptr<FractionsStorage> m_frac_storage;
-
-    std::shared_ptr<PoissonSolverRHSAdaptor> m_poisson_solver_adaptor;
-
-    std::shared_ptr<ElectronsRHS> m_electrons_rhs;
-
-    std::shared_ptr<dsiterpp::TimeIterator> m_time_iterator;
-    std::shared_ptr<dsiterpp::RHSGroup> m_RHSs;
-    std::shared_ptr<dsiterpp::IErrorEstimator> m_error_estimator;
-    std::shared_ptr<dsiterpp::IIntegrator> m_intergator;
-
-    std::shared_ptr<dsiterpp::TimeHookPeriodicFunc> m_output_hook;
 };
 
 #endif // FULL_MODELS_MODEL_ONE_HPP_INCLUDED

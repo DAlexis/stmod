@@ -131,15 +131,18 @@ void StmodTimeStepper::init()
 
 
     const double coarsen_param = 1.2;
-    const double refine_param  = 0.7;
-    const double min_delta     = 3e-11;
+    const double refine_param  = 0.8;
+    const double min_delta     = 1e-11;
     const double max_delta     = 1e-7;
+
+    /*const double refine_tol    = 1e-5;
+    const double coarsen_tol   = 1e-7;*/
 
     const double refine_tol    = 1e-2;
     const double coarsen_tol   = 1e-4;
 
     m_embedded_stepper = std::make_shared<TimeStepping::EmbeddedExplicitRungeKutta<Vector<double>>>(
-        TimeStepping::CASH_KARP,
+        TimeStepping::BOGACKI_SHAMPINE,
         coarsen_param,
         refine_param,
         min_delta,

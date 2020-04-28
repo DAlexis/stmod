@@ -7,8 +7,8 @@
 
 using namespace dealii;
 
-MeshRefiner::MeshRefiner(FEResources& fe_res) :
-    m_fe_res(fe_res)
+MeshRefiner::MeshRefiner(FEGlobalResources& fe_global_res) :
+    m_fe_global_res(fe_global_res)
 {
 }
 
@@ -57,24 +57,24 @@ void MeshRefiner::estimate()
     const unsigned int max_grid_level = 2;
     for (auto &object : m_objects)
     {
-        Vector<float> estimated_error_per_cell(m_fe_res.triangulation().n_active_cells());
+        Vector<float> estimated_error_per_cell(m_fe_global_res.triangulation().n_active_cells());
 
         KellyErrorEstimator<2>::estimate(
-            m_fe_res.dof_handler(),
-            QGauss<2 - 1>(m_fe_res.dof_handler().get_fe().degree + 1),
+            m_fe_global_res.dof_handler(),
+            QGauss<2 - 1>(m_fe_global_res.dof_handler().get_fe().degree + 1),
             std::map<types::boundary_id, const Function<2> *>(),
             object->error_estimation_vector(),
             estimated_error_per_cell
         );
 
-        GridRefinement::refine_and_coarsen_fixed_fraction(m_fe_res.triangulation(),
+        GridRefinement::refine_and_coarsen_fixed_fraction(m_fe_global_res.triangulation(),
                                                           estimated_error_per_cell,
                                                           0.5,
                                                           0.4, 50000);
 
-        if (m_fe_res.triangulation().n_levels() > max_grid_level)
+        if (m_fe_global_res.triangulation().n_levels() > max_grid_level)
         {
-            for (const auto &cell : m_fe_res.triangulation().active_cell_iterators_on_level(max_grid_level))
+            for (const auto &cell : m_fe_global_res.triangulation().active_cell_iterators_on_level(max_grid_level))
             {
                 cell->clear_refine_flag();
             }
@@ -90,22 +90,22 @@ void MeshRefiner::estimate()
 
 void MeshRefiner::refine_and_transfer()
 {
-    SolutionTransfer<2> soltution_transfer(m_fe_res.dof_handler());
+    SolutionTransfer<2> soltution_transfer(m_fe_global_res.dof_handler());
 
     // prepare the triangulation,
-    m_fe_res.triangulation().prepare_coarsening_and_refinement();
+    m_fe_global_res.triangulation().prepare_coarsening_and_refinement();
 
     // prepare the SolutionTransfer object for coarsening and refinement and give
     // the solution vector that we intend to interpolate later,
     soltution_transfer.prepare_for_coarsening_and_refinement(m_solutions_to_transfer);
 
     // actually execute the refinement,
-    m_fe_res.triangulation().execute_coarsening_and_refinement();
+    m_fe_global_res.triangulation().execute_coarsening_and_refinement();
 
     // Recreating all triangulation-related FE resources
-    m_fe_res.init();
+    m_fe_global_res.on_triangulation_updated();
 
-    const unsigned int new_n_dofs = m_fe_res.dof_handler().n_dofs();
+    const unsigned int new_n_dofs = m_fe_global_res.dof_handler().n_dofs();
 
     m_solutions_transferred.clear();
     m_solutions_transferred.resize(m_solutions_to_transfer.size());

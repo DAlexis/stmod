@@ -2,6 +2,7 @@ project(stmod-unit-tests)
 
 set(EXE_SOURCES
     ${PROJECT_SOURCE_DIR}/test-tensors.cpp
+    ${PROJECT_SOURCE_DIR}/test-utils.cpp
 )
 
 set(EXE_HPP

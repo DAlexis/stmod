@@ -9,6 +9,14 @@
 #include <deal.II/lac/affine_constraints.h>
 #include <deal.II/base/quadrature_lib.h>
 
+void create_E_grad_psi_psi_matrix_axial(
+        double Ex, double Ey,
+        const dealii::DoFHandler<2, 2>& dof_handler,
+        dealii::SparseMatrix<double> &sparse_matrix,
+        const dealii::AffineConstraints<double> & constraints = dealii::AffineConstraints<double>(),
+        const dealii::Quadrature<2> & quadrature = dealii::QGauss<2>(/*degree = */ 3),
+        double r_epsilon = 1e-4);
+
 // Version without rhs
 void create_r_laplace_matrix_axial(
         const dealii::DoFHandler<2, 2>& dof_handler,

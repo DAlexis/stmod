@@ -26,6 +26,7 @@
 #include "stmod/mesh-output.hpp"
 #include "stmod/time-iter.hpp"
 #include "stmod/mesh-refiner.hpp"
+#include "stmod/phys-consts.hpp"
 
 #include "stmod/full-models/model-one.hpp"
 #include "stmod/fe-common.hpp"
@@ -56,30 +57,39 @@ int main()
         "/home/dalexies/Projects/stmod/meshes/spheric-needles-1.geo",
         "/home/dalexies/Projects/stmod/meshes/spheric-needles-1.msh"
     );
+    //grid.debug_make_rectangular();
     BoundaryAssigner boundary_assigner(grid);
     boundary_assigner.assign_boundary_ids();
 
-    FEResources fe_res(grid.triangulation(), 1);
-    fe_res.init();
+    FEGlobalResources global_resources(grid.triangulation(), 2);
 
-    ElectricPotential pot(fe_res);
+    FEResources fe_res_potential(global_resources);
+
+    FEResources fe_res_fractions(global_resources);
+
+    global_resources.on_triangulation_updated();
+
+
+    ElectricPotential pot(global_resources);
+
     pot.init_mesh_dependent();
 
-    Electrons elec(fe_res);
+    Electrons elec(global_resources);
     elec.init_mesh_dependent();
 
-    pot.add_charge(elec.values_vector());
+    //pot.add_charge(elec.values_vector(), - Consts::e);
+    elec.set_potential_and_total_charge(pot.values_vector(), pot.total_chagre());
 
-    FieldAssigner fa(fe_res.dof_handler());
+    FieldAssigner fa(global_resources.dof_handler());
     fa.assign_fiend(
         elec.value_w(),
         [](const dealii::Point<2>& point) -> double
         {
-            return 15e13*exp(- (pow((point[0]) / 0.002, 2.0) + pow((point[1] - 0.012 ) / 0.005, 2.0)));
+            return 15e13*exp(- (pow((point[0]-0.0075) / 0.002, 2.0) + pow((point[1] - 0.012 ) / 0.005, 2.0)));
         }
     );
 
-    MeshRefiner refiner(fe_res);
+    MeshRefiner refiner(global_resources);
     refiner.add_mesh_based(&elec);
     refiner.add_mesh_based(&pot);
 
@@ -91,112 +101,55 @@ int main()
     pot.compute(0.0);
     //elec.solve();
 
-    VariablesCollector var_coll(fe_res.constraints());
+    VariablesCollector var_coll(fe_res_fractions.constraints());
     var_coll.add_pre_step(&pot);
     var_coll.add_steppable(&elec);
 
     StmodTimeStepper stepper;
     stepper.init();
 
-    output_maker.output(fe_res.dof_handler(), "frac-out-iter-" + std::to_string(0) + ".vtu");
+    output_maker.output(global_resources.dof_handler(), "frac-out-iter-" + std::to_string(0) + ".vtu");
     refiner.do_refine();
     refiner.do_refine();
+    //boundary_assigner.assign_boundary_ids();
     pot.compute(0.0);
-    output_maker.output(fe_res.dof_handler(), "frac-out-iter-" + std::to_string(1) + ".vtu");
+    pot.compute(0.0);
+    output_maker.output(global_resources.dof_handler(), "frac-out-iter-" + std::to_string(1) + ".vtu");
 
     //return 0.0;
 
     double t = 0;
-    double dt = 1e-8;
+    double dt = 1e-10;
     double last_output_t = t;
-    for (int i = 0; i < 10000000; i++)
+    for (int i = 0; i < 100000; i++)
     {
         /*elec.compute(0.0);
         elec.value_w().add(0.00000005, elec.derivative());
         */
+        boundary_assigner.assign_boundary_ids();
+        pot.compute(0.0);
         std::cout << "Iteration " << i << "; t = " << t << "... " << std::flush;
-        //double dt = stepper.iterate(var_coll, t, 5e-9);
+        auto & dn = elec.get_implicit_dn(dt, 1.0);
 
+        elec.values_vector().add(0.5, dn);
+        fe_res_fractions.constraints().distribute(elec.values_vector());
+        //double dt = stepper.iterate(var_coll, t, 5e-9);
+/*
         double t_new = stepper.iterate(var_coll, t, dt);
         dt = t_new - t;
         t = t_new;
         std::cout << "dt = " << dt << std::endl;
-
-        if (t - last_output_t >= 1e-8)
+*/
+        //if (t - last_output_t >= 1e-8)
         {
             std::string filename = "frac-out-iter-" + std::to_string(i+2) + ".vtu";
             std::cout << "Writing " << filename << std::endl;
-            output_maker.output(fe_res.dof_handler(), filename);
+            output_maker.output(global_resources.dof_handler(), filename);
             last_output_t = t;
         }
-        if (i % 50 == 0 || i < 3)
+        if (i % 100 == 0)
             refiner.do_refine();
     }
 
-
-
-    /*ModelOne model;
-    model.output_fractions("fractions.vtk");
-    model.run();*/
-    //model.output_fractions("fractions.vtk");
-
-    /*
-
-    Grid grid;
-    grid.load_from_file(
-        "/home/dalexies/Projects/stmod/meshes/spheric-needles-1.geo",
-        "/home/dalexies/Projects/stmod/meshes/spheric-needles-1.msh"
-    );
-
-    BoundaryAssigner boundary_assigner(grid);
-    boundary_assigner.assign_boundary_ids();
-    //boundary_assigner.assign_manifold_ids();
-    PoissonSolver poisson_solver(grid.triangulation());
-    poisson_solver.solve();
-    poisson_solver.output("solution-2d-1.vtk");
-
-    FractionsStorage frac_storage;
-    frac_storage.create_arrays(1, poisson_solver.solution().size());
-    ElectronsRHS electrons_rhs(frac_storage, 0, poisson_solver.solution(), poisson_solver.dof_handler());
-    electrons_rhs.calculate_rhs(0.0);
-
-    auto sol = poisson_solver.solution();
-    std::vector<dealii::Vector<double>> old_sol;
-    old_sol.push_back(sol);
-
-    poisson_solver.estimate_error();
-    std::vector<dealii::Vector<double>> interpolated_sol;
-    auto refined_solution = poisson_solver.refine_and_coarsen_grid(old_sol);
-
-
-
-    FESampler sampler(poisson_solver.dof_handler());
-
-    sampler.sample(refined_solution[0]);
-    auto vals = sampler.values();
-    for (size_t i=0; i < vals.size(); i++)
-    {
-        cout << "lap[" << i << "] = " << sampler.laplacians()[i] << endl;
-    }
-
-    VectorOutputMaker vector_out_maker(poisson_solver.triangulation(), poisson_solver.polynomial_degree());
-    vector_out_maker.set_vector(sampler.gradients(), {"Ex", "Ey"});
-    vector_out_maker.output("gradients-test.vtk");
-
-    poisson_solver.solve();
-    poisson_solver.output("solution-2d-2.vtk");
-    */
-/*
-    poisson_solver.estimate_error();
-    poisson_solver.refine_and_coarsen_grid();
-    poisson_solver.solve();
-    poisson_solver.output("solution-2d-2.vtk");
-
-
-    poisson_solver.estimate_error();
-    poisson_solver.refine_and_coarsen_grid();
-    poisson_solver.solve();
-    poisson_solver.output("solution-2d-3.vtk");
-*/
     return 0;
 }

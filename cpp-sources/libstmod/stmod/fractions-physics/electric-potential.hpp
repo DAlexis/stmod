@@ -17,10 +17,10 @@ struct ElectricParameters
 class ElectricPotential : public IOutputProvider, public IMeshBased, public IPreStepJob
 {
 public:
-    ElectricPotential(const FEResources& fe_res);
+    ElectricPotential(const FEGlobalResources& fe_res);
 
     // IVariablesStorage
-    virtual dealii::Vector<double>& values_vector() override;
+    dealii::Vector<double>& values_vector() override;
 
     // IMeshBased
     void init_mesh_dependent() override;
@@ -39,6 +39,8 @@ public:
 
     void set_electric_parameters(const ElectricParameters& electric_parameters);
 
+    void add_boundary_conditions(dealii::AffineConstraints<double>& constraints);
+
 private:
     void calc_total_charge();
 
@@ -53,13 +55,9 @@ private:
 
     ElectricParameters m_electric_parameters;
 
-    const FEResources& m_fe_res;
-
-    dealii::AffineConstraints<double> m_potential_constraints;
-    dealii::SparsityPattern  m_sparsity_pattern;
+    const FEGlobalResources& m_fe_global_res;
 
     dealii::SparseMatrix<double> m_system_matrix;
-    dealii::SparseMatrix<double> m_mass_matrix;
     dealii::SparseDirectUMFPACK m_system_matrix_inverse;
     dealii::Vector<double> m_system_rhs;
     dealii::Vector<double> m_system_rhs_boundary;

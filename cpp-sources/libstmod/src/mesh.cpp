@@ -95,6 +95,20 @@ std::vector<std::shared_ptr<dealii::Manifold<2, 2>>>& Grid::manifolds()
     return m_manifolds;
 }
 
+void Grid::debug_make_rectangular()
+{
+    m_triangulation.clear();
+    GridGenerator::hyper_cube(m_triangulation, 0, 1);
+    GridTools::transform(
+            [this](const dealii::Point<2>& p)
+            {
+                return dealii::Point<2>(p[0]*m_geometry_parameters.cyl_rad, p[1]*m_geometry_parameters.cyl_height);
+            },
+            m_triangulation
+        );
+    m_triangulation.refine_global(5);
+}
+
 BoundaryAssigner::BoundaryAssigner(Grid& grid) :
     m_grid(grid)
 {
@@ -117,13 +131,26 @@ void BoundaryAssigner::assign_boundary_ids()
                 continue;
 
             auto center = face->center();
-            if (center(0) < eps || center(0) > m_grid.geometry_parameters().cyl_rad - eps)
+
+            if (center(0) > m_grid.geometry_parameters().cyl_rad - eps)
+            {
+                face->set_boundary_id(outer_border);
                 continue;
+            }
+
+            if (center(0) < eps)
+            {
+                face->set_boundary_id(axis);
+                continue;
+            }
 
             if (center(1) > m_grid.geometry_parameters().cyl_height / 2.0)
-                face->set_boundary_id(1);
-            else
-                face->set_boundary_id(2);
+            {
+                face->set_boundary_id(top_and_needle);
+                continue;
+            }
+
+            face->set_boundary_id(bottom);
         }
     }
 }

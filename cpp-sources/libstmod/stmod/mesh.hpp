@@ -29,6 +29,8 @@ public:
     dealii::Triangulation<2>& triangulation();
     std::vector<std::shared_ptr<dealii::Manifold<2, 2>>>& manifolds();
 
+    void debug_make_rectangular();
+
 private:
 
     dealii::Triangulation<2> m_triangulation;
@@ -43,6 +45,12 @@ public:
     BoundaryAssigner(Grid& grid);
     void assign_boundary_ids();
     void assign_manifold_ids();
+
+    constexpr static dealii::types::boundary_id top_and_needle = 1;
+    constexpr static dealii::types::boundary_id bottom = 2;
+    constexpr static dealii::types::boundary_id outer_border = 3;
+    constexpr static dealii::types::boundary_id axis = 4;
+
 private:
     Grid& m_grid;
 
