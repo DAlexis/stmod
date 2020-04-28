@@ -55,3 +55,35 @@ const std::vector<SparseTensor3::IndexesTuple>& SparseTensor3::nonzero() const
 {
     return m_nonzero;
 }
+
+
+void SparseTensor3::sum_with_tensor(dealii::Vector<double>& out_vector,
+                     const dealii::Vector<double>& in_first,
+                     const dealii::Vector<double>& in_second) const
+{
+    for (auto & indexes : nonzero())
+    {
+        SparseTensor3::IndexType i = std::get<0>(indexes);
+        SparseTensor3::IndexType j = std::get<1>(indexes);
+        SparseTensor3::IndexType k = std::get<2>(indexes);
+        out_vector[k] += (*this)(i, j, k) * in_first[i] * in_second[j];
+    }
+}
+
+void SparseTensor3::sum_with_tensor(dealii::SparseMatrix<double>& out_matrix,
+                     const dealii::Vector<double>& vector,
+                     IndexType axis) const
+{
+    if (axis != 0)
+        throw std::range_error("Sum along axis != 0 not supported, but easy to implement");
+
+    for (auto & indexes : nonzero())
+    {
+        SparseTensor3::IndexType i = std::get<0>(indexes);
+        SparseTensor3::IndexType j = std::get<1>(indexes);
+        SparseTensor3::IndexType k = std::get<2>(indexes);
+        // The order is k, j because we constuct tensor with third index as row index,
+        // but matrixes are multiplied from left, so they have first index as row index
+        out_matrix(k, j) += (*this)(i, j, k) * vector[i];
+    }
+}

@@ -9,6 +9,16 @@
 
 using namespace dealii;
 
+void remove_negative(dealii::Vector<double>& values)
+{
+    for (dealii::Vector<double>::size_type i = 0; i < values.size(); i++)
+    {
+        if (values[i] < 0.0)
+            values[i] = 0.0;
+    }
+}
+
+
 FEGlobalResources::FEGlobalResources(dealii::Triangulation<2>& triangulation, unsigned int degree) :
     m_triangulation(triangulation), m_fe(degree), m_dof_handler(m_triangulation)
 {
@@ -40,6 +50,17 @@ FEGlobalResources::FEGlobalResources(dealii::Triangulation<2>& triangulation, un
                                        matrix,
                                        m_constraints,
                                        QGauss<2>(2 * m_fe.degree + 1));*/
+        }
+    );
+
+    m_grad_phi_i_grad_phi_j_dot_r_phi_k.set_initializer(
+        [this](SparseTensor3& tensor)
+        {
+            tensor.clear();
+            std::cout << "Creating grad_phi_i_grad_phi_j_dot_r_phi_k tensor..." << std::endl;
+            create_grad_phi_i_grad_phi_j_dot_r_phi_k(
+                    m_dof_handler,
+                    tensor);
         }
     );
 }
@@ -110,6 +131,11 @@ const dealii::SparseMatrix<double>& FEGlobalResources::mass_matrix() const
 const dealii::SparseMatrix<double>& FEGlobalResources::laplace_matrix() const
 {
     return m_laplace_matrix;
+}
+
+const SparseTensor3& FEGlobalResources::grad_phi_i_grad_phi_j_dot_r_phi_k() const
+{
+    return m_grad_phi_i_grad_phi_j_dot_r_phi_k;
 }
 
 void FEGlobalResources::add_subscriber(IFEGlobalResourcesUser* subscriber)

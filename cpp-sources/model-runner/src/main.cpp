@@ -63,10 +63,6 @@ int main()
 
     FEGlobalResources global_resources(grid.triangulation(), 2);
 
-    FEResources fe_res_potential(global_resources);
-
-    FEResources fe_res_fractions(global_resources);
-
     global_resources.on_triangulation_updated();
 
 
@@ -101,7 +97,7 @@ int main()
     pot.compute(0.0);
     //elec.solve();
 
-    VariablesCollector var_coll(fe_res_fractions.constraints());
+    VariablesCollector var_coll(global_resources.constraints());
     var_coll.add_pre_step(&pot);
     var_coll.add_steppable(&elec);
 
@@ -119,7 +115,7 @@ int main()
     //return 0.0;
 
     double t = 0;
-    double dt = 1e-10;
+    double dt = 1e-9;
     double last_output_t = t;
     for (int i = 0; i < 100000; i++)
     {
@@ -129,10 +125,10 @@ int main()
         boundary_assigner.assign_boundary_ids();
         pot.compute(0.0);
         std::cout << "Iteration " << i << "; t = " << t << "... " << std::flush;
-        auto & dn = elec.get_implicit_dn(dt, 1.0);
+        auto & dn = elec.get_implicit_dn(dt, 0.5);
 
-        elec.values_vector().add(0.5, dn);
-        fe_res_fractions.constraints().distribute(elec.values_vector());
+        elec.values_vector().add(1.0, dn);
+        global_resources.constraints().distribute(elec.values_vector());
         //double dt = stepper.iterate(var_coll, t, 5e-9);
 /*
         double t_new = stepper.iterate(var_coll, t, dt);

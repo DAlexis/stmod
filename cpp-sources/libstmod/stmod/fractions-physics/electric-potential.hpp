@@ -39,19 +39,14 @@ public:
 
     void set_electric_parameters(const ElectricParameters& electric_parameters);
 
-    void add_boundary_conditions(dealii::AffineConstraints<double>& constraints);
-
 private:
     void calc_total_charge();
 
     /* @brief This function is boundary condition-dependent, so it should be called every potential change
      * It may be optimized later
      */
-    void create_system_matrix_and_inverse_matrix();
     void create_rhs();
     void solve_lin_eq();
-
-    void create_boundary_pattern();
 
     ElectricParameters m_electric_parameters;
 
@@ -60,8 +55,6 @@ private:
     dealii::SparseMatrix<double> m_system_matrix;
     dealii::SparseDirectUMFPACK m_system_matrix_inverse;
     dealii::Vector<double> m_system_rhs;
-    dealii::Vector<double> m_system_rhs_boundary;
-    dealii::Vector<double> m_system_rhs_boundary_pattern; // 0.0 if is boundary value and 1.0 otherwise
 
     dealii::Vector<double> m_solution;
 

@@ -1,9 +1,12 @@
 #include "stmod/fractions-physics/e.hpp"
 #include "stmod/fe-sampler.hpp"
 #include "stmod/matgen.hpp"
+#include "stmod/mesh.hpp"
 
 #include <deal.II/dofs/dof_tools.h>
 #include <deal.II/base/quadrature_lib.h>
+#include <deal.II/numerics/vector_tools.h>
+#include <deal.II/numerics/matrix_tools.h>
 #include <deal.II/fe/fe_q.h>
 
 using namespace dealii;
@@ -84,28 +87,47 @@ void Electrons::set_potential_and_total_charge(const dealii::Vector<double>& pot
 
 const dealii::Vector<double>& Electrons::get_implicit_dn(double dt, double theta)
 {
-    create_implicit_method_matrixes(dt, theta);
-    m_tmp = 0;
-    m_implicit_rhs_matrix.vmult(m_tmp, m_concentration);
+    // Creating implicit system matrix
+    m_implicit_system_matrix.copy_from(m_fe_global_res.mass_matrix());
+
+    m_tmp_matrix = 0;
+    //m_fe_global_res.grad_phi_i_grad_phi_j_dot_r_phi_k().sum_with_tensor(m_tmp_matrix, *m_potential);
+    //m_implicit_system_matrix.add(-dt*theta*parameters.mu_e, m_tmp_matrix);
+    m_implicit_system_matrix.add(-dt*theta*parameters.D_e, m_fe_global_res.laplace_matrix());
+
+    m_implicit_system_matrix.add(-dt*theta*parameters.mu_e, m_E_grad_psi_psi_matrix);
+
+
+    // Creating implicit RHS
+    m_implicit_rhs_matrix = 0;
+    m_implicit_rhs_matrix.add(dt*parameters.D_e, m_fe_global_res.laplace_matrix());
+    //m_implicit_rhs_matrix.add(dt*parameters.mu_e, m_tmp_matrix);
+    m_implicit_rhs_matrix.add(dt*parameters.mu_e, m_E_grad_psi_psi_matrix);
+
+    m_implicit_rhs = 0;
+    m_implicit_rhs_matrix.vmult(m_implicit_rhs, m_concentration);
+
+
+    // Preparing to solve system
     m_implicit_delta = 0;
-    m_implicit_system_reversed.vmult(m_implicit_delta, m_tmp);
-    m_constraints.distribute(m_implicit_delta);
+    m_fe_global_res.constraints().condense(m_implicit_system_matrix, m_implicit_rhs);
+
+    // Applying boundary conditions
+    MatrixTools::apply_boundary_values(m_boundary_values,
+                                     m_implicit_system_matrix,
+                                     m_implicit_delta,
+                                     m_implicit_rhs);
+
+    // Creating inverted matrix
+    m_implicit_system_reversed.initialize(m_implicit_system_matrix);
+
+    m_implicit_system_reversed.vmult(m_implicit_delta, m_implicit_rhs);
+    m_fe_global_res.constraints().distribute(m_implicit_delta);
     return m_implicit_delta;
 }
 
 void Electrons::init_mesh_dependent()
 {
-    m_constraints.clear();
-        DoFTools::make_hanging_node_constraints(m_fe_global_res.dof_handler(), m_constraints);
-    m_constraints.close();
-
-    DynamicSparsityPattern dsp(m_fe_global_res.n_dofs());
-    DoFTools::make_sparsity_pattern(m_fe_global_res.dof_handler(),
-                                  dsp,
-                                  m_constraints,
-                                  /*keep_constrained_dofs = */ false);
-    m_sparsity_pattern.copy_from(dsp);
-
     m_system_rhs.reinit(m_fe_global_res.n_dofs());
 
     m_concentration.reinit(m_fe_global_res.n_dofs());
@@ -113,36 +135,37 @@ void Electrons::init_mesh_dependent()
     m_derivative_without_single_point.reinit(m_fe_global_res.n_dofs());
 
     m_implicit_delta.reinit(m_fe_global_res.n_dofs());
-    m_tmp.reinit(m_fe_global_res.n_dofs());
+    m_implicit_rhs.reinit(m_fe_global_res.n_dofs());
+    m_tmp_vector.reinit(m_fe_global_res.n_dofs());
 
-    m_E_grad_psi_psi_matrix.reinit(m_sparsity_pattern);
-    m_mass_matrix_axial.reinit(m_sparsity_pattern);
-    m_laplace_matrix_axial.reinit(m_sparsity_pattern);
+    m_E_grad_psi_psi_matrix.reinit(m_fe_global_res.sparsity_pattern());
 
+    m_implicit_rhs_matrix.reinit(m_fe_global_res.sparsity_pattern());
+    m_implicit_system_matrix.reinit(m_fe_global_res.sparsity_pattern());
 
-    m_implicit_rhs_matrix.reinit(m_sparsity_pattern);
-    m_implicit_system_matrix.reinit(m_sparsity_pattern);
+    m_tmp_matrix.reinit(m_fe_global_res.sparsity_pattern());
 
     create_E_grad_psi_psi_matrix_axial(
             10/0.002, 10/0.002,
             m_fe_global_res.dof_handler(),
-            m_E_grad_psi_psi_matrix,
-            m_constraints,
-            dealii::QGauss<2>(2 * m_fe_global_res.fe().degree - 1));
+            m_E_grad_psi_psi_matrix);
 
-    create_r_mass_matrix_axial(
-                m_fe_global_res.dof_handler(),
-                m_mass_matrix_axial,
-                m_constraints,
-                dealii::QGauss<2>(2 * m_fe_global_res.fe().degree - 1));
+    // Creating bounndary values map
+    m_boundary_values.clear();
+    VectorTools::interpolate_boundary_values(m_fe_global_res.dof_handler(),
+                                             BoundaryAssigner::top_and_needle,
+                                             Functions::ZeroFunction<2>(),
+                                             m_boundary_values);
 
-    create_r_laplace_matrix_axial(
-                m_fe_global_res.dof_handler(),
-                m_laplace_matrix_axial,
-                m_constraints,
-                dealii::QGauss<2>(2 * m_fe_global_res.fe().degree - 1));
+    VectorTools::interpolate_boundary_values(m_fe_global_res.dof_handler(),
+                                             BoundaryAssigner::bottom,
+                                             Functions::ZeroFunction<2>(),
+                                             m_boundary_values);
 
-
+    VectorTools::interpolate_boundary_values(m_fe_global_res.dof_handler(),
+                                             BoundaryAssigner::outer_border,
+                                             Functions::ZeroFunction<2>(),
+                                             m_boundary_values);
 }
 
 const dealii::Vector<double>& Electrons::error_estimation_vector() const
@@ -152,16 +175,7 @@ const dealii::Vector<double>& Electrons::error_estimation_vector() const
 
 void Electrons::create_implicit_method_matrixes(double dt, double theta)
 {
-    m_implicit_system_matrix.copy_from(m_mass_matrix_axial);
-    m_implicit_system_matrix.add(-dt*theta*parameters.mu_e, m_E_grad_psi_psi_matrix);
-    m_implicit_system_matrix.add(-dt*theta*parameters.D_e, m_laplace_matrix_axial);
 
-    m_implicit_rhs_matrix = 0;
-    m_implicit_rhs_matrix.add(dt*parameters.mu_e, m_E_grad_psi_psi_matrix);
-    m_implicit_rhs_matrix.add(dt*parameters.D_e, m_laplace_matrix_axial);
-
-    m_implicit_system_reversed.initialize(m_implicit_system_matrix);
-    //create_E_grad_psi_psi_matrix_axial()
 }
 
 void Electrons::create_rhs()
@@ -175,7 +189,7 @@ void Electrons::create_rhs()
 
     m_E_grad_psi_psi_matrix.vmult(m_system_rhs, m_concentration);
     m_system_rhs *= -parameters.mu_e;
-    m_constraints.distribute(m_system_rhs);
+    m_fe_global_res.constraints().distribute(m_system_rhs);
 
     /*
     m_tmp = 0;
@@ -212,7 +226,7 @@ void Electrons::add_single_point_derivative()
 
     for (size_t i = 0; i < m_pair_sources.size(); i++)
     {
-        m_tmp = *std::get<0>(m_pair_sources[i]) * *std::get<1>(m_pair_sources[i]);
-        m_derivative.add(m_pair_reaction_consts[i], m_tmp);
+        m_tmp_vector = *std::get<0>(m_pair_sources[i]) * *std::get<1>(m_pair_sources[i]);
+        m_derivative.add(m_pair_reaction_consts[i], m_tmp_vector);
     }
 }

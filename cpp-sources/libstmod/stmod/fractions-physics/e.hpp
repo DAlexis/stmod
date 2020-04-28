@@ -26,8 +26,11 @@ struct ElectronsConstants
 struct ElectronsParameters
 {
     double mu_e = 5.92; // m^2 V^-1 s^-1
-    //double D_e = 0.1; // m^2 s^-1
-    double D_e = 0.0; // m^2 s^-1
+    //double mu_e = 5.92e-3; // m^2 V^-1 s^-1
+    //double mu_e = 0.0; // m^2 V^-1 s^-1
+    double D_e = 0.1; // m^2 s^-1
+    //double D_e = 1; // m^2 s^-1
+    //double D_e = 0.0; // m^2 s^-1
 };
 
 class Electrons : public IOutputProvider, public ISteppable, public IMeshBased
@@ -75,15 +78,13 @@ private:
 
     const FEGlobalResources& m_fe_global_res;
 
-    dealii::AffineConstraints<double> m_constraints;
-    dealii::SparsityPattern m_sparsity_pattern;
-
     dealii::Vector<double> m_system_rhs;
     dealii::Vector<double> m_concentration;
     dealii::Vector<double> m_derivative;
     dealii::Vector<double> m_derivative_without_single_point;
 
-    dealii::Vector<double> m_tmp;
+    dealii::Vector<double> m_tmp_vector;
+    dealii::Vector<double> m_implicit_rhs;
 
     std::vector<const dealii::Vector<double>*> m_single_sources;
     std::vector<double> m_single_reaction_consts;
@@ -92,17 +93,18 @@ private:
     std::vector<double> m_pair_reaction_consts;
 
     dealii::SparseMatrix<double> m_E_grad_psi_psi_matrix;
-    dealii::SparseMatrix<double> m_mass_matrix_axial;
-    dealii::SparseMatrix<double> m_laplace_matrix_axial;
 
     dealii::SparseMatrix<double> m_implicit_rhs_matrix;
     dealii::SparseMatrix<double> m_implicit_system_matrix;
+    dealii::SparseMatrix<double> m_tmp_matrix;
     dealii::SparseDirectUMFPACK m_implicit_system_reversed;
     dealii::Vector<double> m_implicit_delta;
 
 
     const dealii::Vector<double>* m_potential = nullptr;
     const dealii::Vector<double>* m_total_charge = nullptr;
+
+    std::map<dealii::types::global_dof_index, double> m_boundary_values;
 
     const std::string m_names[2] = {"Electrons_density", "Electrons_density_derivative"};
 };

@@ -14,20 +14,8 @@
 #include <deal.II/lac/sparse_direct.h>
 
 #include <functional>
-/*
-class FEResourcesNew
-{
-public:
-    FEResources(dealii::Triangulation<2>& triangulation, dealii::AffineConstraints<double>& constraints, unsigned int degree);
 
-    dealii::Triangulation<2>& triangulation();
-
-    void init();
-
-private:
-    dealii::AffineConstraints<double> m_constraints;
-    LazyInitializerCleaner m_cleaner;
-};*/
+void remove_negative(dealii::Vector<double>& values);
 
 class IFEGlobalResourcesUser
 {
@@ -53,6 +41,7 @@ public:
 
     const dealii::SparseMatrix<double>& mass_matrix() const;
     const dealii::SparseMatrix<double>& laplace_matrix() const;
+    const SparseTensor3& grad_phi_i_grad_phi_j_dot_r_phi_k() const;
 
     void add_subscriber(IFEGlobalResourcesUser* subscriber);
 
@@ -69,6 +58,8 @@ private:
     LazyInitializerCleaner m_cleaner;
     LazyInitializer<dealii::SparseMatrix<double>> m_laplace_matrix{m_cleaner};
     LazyInitializer<dealii::SparseMatrix<double>> m_mass_matrix{m_cleaner};
+
+    LazyInitializer<SparseTensor3> m_grad_phi_i_grad_phi_j_dot_r_phi_k{m_cleaner};
 };
 
 class FEResources : public IFEGlobalResourcesUser

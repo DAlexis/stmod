@@ -32,13 +32,12 @@ void ElectricPotential::init_mesh_dependent()
 {
     m_solution.reinit(m_fe_global_res.dof_handler().n_dofs());
     m_system_rhs.reinit(m_fe_global_res.dof_handler().n_dofs());
-    m_system_rhs_boundary.reinit(m_fe_global_res.dof_handler().n_dofs());
     m_total_charge.reinit(m_fe_global_res.dof_handler().n_dofs());
 
     m_system_matrix.reinit(m_fe_global_res.sparsity_pattern());
 
+    // Creating bounndary values map
     m_boundary_values.clear();
-    // Boundary values are here
     VectorTools::interpolate_boundary_values(m_fe_global_res.dof_handler(),
                                              BoundaryAssigner::top_and_needle,
                                              Functions::ConstantFunction<2>(m_electric_parameters.needle_potential),
@@ -85,32 +84,12 @@ void ElectricPotential::create_rhs()
     m_system_rhs = 0;
     m_fe_global_res.mass_matrix().vmult(m_system_rhs, m_total_charge);
     m_system_rhs *= 1 / Consts::epsilon_0;
-/*
-    //m_system_rhs.print();
-    // Removing values at boundary conditions position
-    m_system_rhs.scale(m_system_rhs_boundary_pattern);
-
-
-    // Adding boundary conditions
-    m_system_rhs += m_system_rhs_boundary;
-    //m_system_rhs = m_system_rhs_boundary;*/
 }
 
 void ElectricPotential::solve_lin_eq()
 {
     m_system_matrix_inverse.initialize(m_system_matrix);
     m_system_matrix_inverse.vmult(m_solution, m_system_rhs);
-    /*
-    m_fe_res.lin_eq_solver().solve(
-                m_system_matrix, m_solution, m_system_rhs,
-                (fabs(m_bottom_potential) + fabs(m_needle_potential))*0.000005, m_name);*/
-/*
-    std::cout << "Potential: Solving linear equations" << std::endl;
-    SolverControl solver_control(5000, 1e-10);
-    SolverCG<>        solver(solver_control);
-    solver.solve(m_system_matrix, m_solution, m_system_rhs, PreconditionIdentity());
-    std::cout << "Potential: " << solver_control.last_step() << " CG iterations needed to obtain convergence." << std::endl;
-    */
     m_fe_global_res.constraints().distribute(m_solution);
 }
 
@@ -143,37 +122,6 @@ const dealii::Vector<double>& ElectricPotential::total_chagre() const
 void ElectricPotential::set_electric_parameters(const ElectricParameters& electric_parameters)
 {
     m_electric_parameters = electric_parameters;
-    create_system_matrix_and_inverse_matrix();
-}
-
-void ElectricPotential::create_system_matrix_and_inverse_matrix()
-{
-
-
-    //create_boundary_pattern();
-}
-
-void ElectricPotential::create_boundary_pattern()
-{
-    m_system_rhs_boundary_pattern.reinit(m_system_rhs_boundary.size());
-    for (dealii::Vector<double>::size_type i = 0; i < m_system_rhs_boundary.size(); i++)
-    {
-        m_system_rhs_boundary_pattern[i] = (m_system_rhs_boundary[i] == 0.0) ? 1.0 : 0.0;
-    }
-}
-
-
-void ElectricPotential::add_boundary_conditions(dealii::AffineConstraints<double>& constraints)
-{
-    VectorTools::interpolate_boundary_values(m_fe_global_res.dof_handler(),
-                                           2,
-                                           Functions::ConstantFunction<2>(m_electric_parameters.bottom_potential),
-                                           constraints);
-
-    VectorTools::interpolate_boundary_values(m_fe_global_res.dof_handler(),
-                                           1,
-                                           Functions::ConstantFunction<2>(m_electric_parameters.needle_potential),
-                                           constraints);
 }
 
 void ElectricPotential::calc_total_charge()
