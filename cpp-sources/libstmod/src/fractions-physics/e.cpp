@@ -92,7 +92,13 @@ const dealii::Vector<double>& Electrons::get_implicit_dn(double dt, double theta
 
     m_tmp_matrix = 0;
     //m_fe_global_res.grad_phi_i_grad_phi_j_dot_r_phi_k().sum_with_tensor(m_tmp_matrix, *m_potential);
-    //m_implicit_system_matrix.add(-dt*theta*parameters.mu_e, m_tmp_matrix);
+    create_E_grad_psi_psi_matrix_axial(
+            //10/0.002, 10/0.002,
+            *m_potential,
+            m_fe_global_res.dof_handler(),
+            m_tmp_matrix);
+
+    m_implicit_system_matrix.add(-dt*theta*parameters.mu_e, m_tmp_matrix);
     m_implicit_system_matrix.add(-dt*theta*parameters.D_e, m_fe_global_res.laplace_matrix());
 
     m_implicit_system_matrix.add(-dt*theta*parameters.mu_e, m_E_grad_psi_psi_matrix);
@@ -101,8 +107,8 @@ const dealii::Vector<double>& Electrons::get_implicit_dn(double dt, double theta
     // Creating implicit RHS
     m_implicit_rhs_matrix = 0;
     m_implicit_rhs_matrix.add(dt*parameters.D_e, m_fe_global_res.laplace_matrix());
-    //m_implicit_rhs_matrix.add(dt*parameters.mu_e, m_tmp_matrix);
-    m_implicit_rhs_matrix.add(dt*parameters.mu_e, m_E_grad_psi_psi_matrix);
+    m_implicit_rhs_matrix.add(dt*parameters.mu_e, m_tmp_matrix);
+    //m_implicit_rhs_matrix.add(dt*parameters.mu_e, m_E_grad_psi_psi_matrix);
 
     m_implicit_rhs = 0;
     m_implicit_rhs_matrix.vmult(m_implicit_rhs, m_concentration);

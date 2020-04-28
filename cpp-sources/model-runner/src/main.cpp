@@ -128,6 +128,7 @@ int main()
         auto & dn = elec.get_implicit_dn(dt, 0.5);
 
         elec.values_vector().add(1.0, dn);
+        remove_negative(elec.values_vector());
         global_resources.constraints().distribute(elec.values_vector());
         //double dt = stepper.iterate(var_coll, t, 5e-9);
 /*
@@ -143,7 +144,7 @@ int main()
             output_maker.output(global_resources.dof_handler(), filename);
             last_output_t = t;
         }
-        if (i % 100 == 0)
+        if (i % 10 == 0)
             refiner.do_refine();
     }
 

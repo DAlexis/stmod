@@ -66,7 +66,7 @@ void SparseTensor3::sum_with_tensor(dealii::Vector<double>& out_vector,
         SparseTensor3::IndexType i = std::get<0>(indexes);
         SparseTensor3::IndexType j = std::get<1>(indexes);
         SparseTensor3::IndexType k = std::get<2>(indexes);
-        out_vector[k] += (*this)(i, j, k) * in_first[i] * in_second[j];
+        out_vector[i] += (*this)(i, j, k) * in_first[j] * in_second[k];
     }
 }
 
@@ -82,8 +82,6 @@ void SparseTensor3::sum_with_tensor(dealii::SparseMatrix<double>& out_matrix,
         SparseTensor3::IndexType i = std::get<0>(indexes);
         SparseTensor3::IndexType j = std::get<1>(indexes);
         SparseTensor3::IndexType k = std::get<2>(indexes);
-        // The order is k, j because we constuct tensor with third index as row index,
-        // but matrixes are multiplied from left, so they have first index as row index
-        out_matrix(k, j) += (*this)(i, j, k) * vector[i];
+        out_matrix(i, j) += (*this)(i, j, k) * vector[k];
     }
 }
