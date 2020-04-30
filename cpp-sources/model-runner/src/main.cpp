@@ -73,7 +73,7 @@ int main()
     Electrons elec(global_resources);
     elec.init_mesh_dependent();
 
-    //pot.add_charge(elec.values_vector(), - Consts::e);
+    pot.add_charge(elec.values_vector(), - Consts::e);
     elec.set_potential_and_total_charge(pot.values_vector(), pot.total_chagre());
 
     FieldAssigner fa(global_resources.dof_handler());
@@ -115,7 +115,7 @@ int main()
     //return 0.0;
 
     double t = 0;
-    double dt = 1e-9;
+    double dt = 1e-10;
     double last_output_t = t;
     for (int i = 0; i < 100000; i++)
     {

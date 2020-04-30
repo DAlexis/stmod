@@ -101,7 +101,7 @@ const dealii::Vector<double>& Electrons::get_implicit_dn(double dt, double theta
     m_implicit_system_matrix.add(-dt*theta*parameters.mu_e, m_tmp_matrix);
     m_implicit_system_matrix.add(-dt*theta*parameters.D_e, m_fe_global_res.laplace_matrix());
 
-    m_implicit_system_matrix.add(-dt*theta*parameters.mu_e, m_E_grad_psi_psi_matrix);
+    //m_implicit_system_matrix.add(-dt*theta*parameters.mu_e, m_E_grad_psi_psi_matrix);
 
 
     // Creating implicit RHS

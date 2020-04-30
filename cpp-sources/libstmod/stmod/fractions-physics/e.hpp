@@ -25,7 +25,7 @@ struct ElectronsConstants
 
 struct ElectronsParameters
 {
-    double mu_e = 5.92; // m^2 V^-1 s^-1
+    double mu_e = -5.92; // m^2 V^-1 s^-1
     //double mu_e = 5.92e-3; // m^2 V^-1 s^-1
     //double mu_e = 0.0; // m^2 V^-1 s^-1
     double D_e = 0.1; // m^2 s^-1
