@@ -18,6 +18,7 @@ set(LIB_SOURCE
     ${PROJECT_SOURCE_DIR}/src/mesh-output.cpp
     ${PROJECT_SOURCE_DIR}/src/fe-common.cpp
     ${PROJECT_SOURCE_DIR}/src/lin-eq-solver.cpp
+    ${PROJECT_SOURCE_DIR}/src/phys-consts.cpp
     ${PROJECT_SOURCE_DIR}/src/fractions-physics/fraction-base.cpp
     ${PROJECT_SOURCE_DIR}/src/fractions-physics/e.cpp
     ${PROJECT_SOURCE_DIR}/src/fractions-physics/electric-potential.cpp
