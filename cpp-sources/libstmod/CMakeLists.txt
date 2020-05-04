@@ -8,7 +8,6 @@ find_package(deal.II REQUIRED)
 
 set(LIB_SOURCE
     ${PROJECT_SOURCE_DIR}/src/utils.cpp
-    ${PROJECT_SOURCE_DIR}/src/poisson-grid.cpp
     ${PROJECT_SOURCE_DIR}/src/fe-sampler.cpp
     ${PROJECT_SOURCE_DIR}/src/field-output.cpp
     ${PROJECT_SOURCE_DIR}/src/fractions.cpp
@@ -22,6 +21,7 @@ set(LIB_SOURCE
     ${PROJECT_SOURCE_DIR}/src/fractions-physics/fraction-base.cpp
     ${PROJECT_SOURCE_DIR}/src/fractions-physics/e.cpp
     ${PROJECT_SOURCE_DIR}/src/fractions-physics/electric-potential.cpp
+    ${PROJECT_SOURCE_DIR}/src/fractions-physics/reaction-constants.cpp
 	${PROJECT_SOURCE_DIR}/src/full-models/model-one.cpp
     ${PROJECT_SOURCE_DIR}/src/time-iter.cpp
     ${PROJECT_SOURCE_DIR}/src/mesh-refiner.cpp
@@ -33,7 +33,6 @@ set(LIB_HPP
     ${PROJECT_SOURCE_DIR}/stmod/i-steppable.hpp
     ${PROJECT_SOURCE_DIR}/stmod/i-mesh-based.hpp
     ${PROJECT_SOURCE_DIR}/stmod/utils.hpp
-    ${PROJECT_SOURCE_DIR}/stmod/poisson-grid.hpp
     ${PROJECT_SOURCE_DIR}/stmod/fe-sampler.hpp
     ${PROJECT_SOURCE_DIR}/stmod/field-output.hpp
     ${PROJECT_SOURCE_DIR}/stmod/fractions.hpp
@@ -46,6 +45,7 @@ set(LIB_HPP
     ${PROJECT_SOURCE_DIR}/stmod/fractions-physics/fraction-base.hpp
     ${PROJECT_SOURCE_DIR}/stmod/fractions-physics/e.hpp
     ${PROJECT_SOURCE_DIR}/stmod/fractions-physics/electric-potential.hpp
+    ${PROJECT_SOURCE_DIR}/stmod/fractions-physics/reaction-constants.hpp
     ${PROJECT_SOURCE_DIR}/stmod/full-models/model-one.hpp
 	${PROJECT_SOURCE_DIR}/stmod/phys-consts.hpp
     ${PROJECT_SOURCE_DIR}/stmod/time-iter.hpp

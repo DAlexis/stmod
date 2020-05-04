@@ -20,10 +20,10 @@ public:
     ElectricPotential(const FEGlobalResources& fe_res);
 
     // IVariablesStorage
-    dealii::Vector<double>& values_vector() override;
+    dealii::Vector<double>& values_w() override;
 
     // IMeshBased
-    void init_mesh_dependent() override;
+    void init_mesh_dependent(const dealii::DoFHandler<2>& dof_handler) override;
     const dealii::Vector<double>& error_estimation_vector() const override;
 
     // IPreStepJob

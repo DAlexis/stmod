@@ -18,7 +18,7 @@ ElectricPotential::ElectricPotential(const FEGlobalResources& fe_res) :
     //m_fe_res.set_boundary_cond_gen([this](auto & constraints) { add_boundary_conditions(constraints); });
 }
 
-dealii::Vector<double>& ElectricPotential::values_vector()
+dealii::Vector<double>& ElectricPotential::values_w()
 {
     return m_solution;
 }
@@ -28,7 +28,7 @@ const dealii::Vector<double>& ElectricPotential::error_estimation_vector() const
     return m_solution;
 }
 
-void ElectricPotential::init_mesh_dependent()
+void ElectricPotential::init_mesh_dependent(const dealii::DoFHandler<2>& dof_handler)
 {
     m_solution.reinit(m_fe_global_res.dof_handler().n_dofs());
     m_system_rhs.reinit(m_fe_global_res.dof_handler().n_dofs());

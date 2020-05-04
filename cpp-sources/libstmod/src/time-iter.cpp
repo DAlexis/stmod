@@ -36,7 +36,7 @@ void VariablesCollector::push_values()
     dealii::Vector<double>::size_type current_offset = 0;
     for (auto steppable : m_steppables)
     {
-        auto & target_vector = steppable->values_vector();
+        auto & target_vector = steppable->values_w();
         copy_vector_part(target_vector, 0, target_vector.size(),
                          m_values, current_offset);
         current_offset += target_vector.size();
@@ -58,7 +58,7 @@ void VariablesCollector::pull_values()
     dealii::Vector<double>::size_type current_offset = 0;
     for (auto steppable : m_steppables)
     {
-        const auto & values = steppable->values_vector();
+        const auto & values = steppable->values_w();
 
         copy_vector_part(m_values, current_offset, values.size(),
                          values, 0);
@@ -72,7 +72,7 @@ void VariablesCollector::pull_derivatives()
     dealii::Vector<double>::size_type current_offset = 0;
     for (auto steppable : m_steppables)
     {
-        const auto & derivatives = steppable->derivatives_vector();
+        const auto & derivatives = steppable->derivatives();
 
         copy_vector_part(m_derivatives, current_offset, derivatives.size(),
                          derivatives, 0);
@@ -91,7 +91,7 @@ void VariablesCollector::compute(double t)
 
     for (auto steppable : m_steppables)
     {
-        steppable->compute(t);
+        steppable->compute_derivetives(t);
     }
 }
 
@@ -100,7 +100,7 @@ dealii::Vector<double>::size_type VariablesCollector::get_total_size()
     dealii::Vector<double>::size_type total_size = 0;
     for (auto steppable : m_steppables)
     {
-        total_size += steppable->values_vector().size();
+        total_size += steppable->values_w().size();
     }
     return total_size;
 }

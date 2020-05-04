@@ -16,7 +16,6 @@
  * Author: Wolfgang Bangerth, University of Heidelberg, 1999
  */
 
-#include "stmod/poisson-grid.hpp"
 #include "stmod/poisson-solver.hpp"
 #include "stmod/fe-sampler.hpp"
 #include "stmod/field-output.hpp"
@@ -68,13 +67,13 @@ int main()
 
     ElectricPotential pot(global_resources);
 
-    pot.init_mesh_dependent();
+    pot.init_mesh_dependent(global_resources.dof_handler());
 
     Electrons elec(global_resources);
-    elec.init_mesh_dependent();
+    elec.init_mesh_dependent(global_resources.dof_handler());
 
-    pot.add_charge(elec.values_vector(), - Consts::e);
-    elec.set_potential_and_total_charge(pot.values_vector(), pot.total_chagre());
+    pot.add_charge(elec.values_w(), - Consts::e);
+    elec.set_potential(pot.values_w());
 
     FieldAssigner fa(global_resources.dof_handler());
     fa.assign_fiend(
@@ -96,11 +95,11 @@ int main()
 
     pot.compute(0.0);
     //elec.solve();
-
+/*
     VariablesCollector var_coll(global_resources.constraints());
     var_coll.add_pre_step(&pot);
     var_coll.add_steppable(&elec);
-
+*/
     StmodTimeStepper stepper;
     stepper.init();
 
@@ -125,11 +124,11 @@ int main()
         boundary_assigner.assign_boundary_ids();
         pot.compute(0.0);
         std::cout << "Iteration " << i << "; t = " << t << "... " << std::flush;
-        auto & dn = elec.get_implicit_dn(dt, 0.5);
+        auto & dn = elec.get_implicit_delta(dt, 0.5);
 
-        elec.values_vector().add(1.0, dn);
-        remove_negative(elec.values_vector());
-        global_resources.constraints().distribute(elec.values_vector());
+        elec.values_w().add(1.0, dn);
+        remove_negative(elec.values_w());
+        global_resources.constraints().distribute(elec.values_w());
         //double dt = stepper.iterate(var_coll, t, 5e-9);
 /*
         double t_new = stepper.iterate(var_coll, t, dt);

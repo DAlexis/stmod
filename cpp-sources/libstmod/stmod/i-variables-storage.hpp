@@ -6,7 +6,7 @@
 class IVariablesStorage
 {
 public:
-    virtual dealii::Vector<double>& values_vector() = 0;
+    virtual dealii::Vector<double>& values_w() = 0;
 
     virtual ~IVariablesStorage() = default;
 };

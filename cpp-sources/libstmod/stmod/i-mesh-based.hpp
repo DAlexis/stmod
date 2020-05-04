@@ -4,11 +4,12 @@
 #include "stmod/i-variables-storage.hpp"
 
 #include <deal.II/lac/vector.h>
+#include <deal.II/dofs/dof_handler.h>
 
 class IMeshBased : public IVariablesStorage
 {
 public:
-    virtual void init_mesh_dependent() = 0;
+    virtual void init_mesh_dependent(const dealii::DoFHandler<2>& dof_handler) = 0;
 
     virtual const dealii::Vector<double>& error_estimation_vector() const = 0;
 };

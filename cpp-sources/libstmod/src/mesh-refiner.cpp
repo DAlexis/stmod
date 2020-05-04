@@ -32,7 +32,7 @@ void MeshRefiner::pull_values()
     m_solutions_to_transfer.resize(m_objects.size());
     for (size_t i = 0; i < m_objects.size(); i++)
     {
-        m_solutions_to_transfer[i] = m_objects[i]->values_vector();
+        m_solutions_to_transfer[i] = m_objects[i]->values_w();
     }
 }
 
@@ -40,7 +40,7 @@ void MeshRefiner::push_values()
 {
     for (size_t i = 0; i < m_objects.size(); i++)
     {
-        m_objects[i]->values_vector() = m_solutions_transferred[i];
+        m_objects[i]->values_w() = m_solutions_transferred[i];
     }
 }
 
@@ -48,7 +48,7 @@ void MeshRefiner::update_objects()
 {
     for (auto &object : m_objects)
     {
-        object->init_mesh_dependent();
+        object->init_mesh_dependent(m_fe_global_res.dof_handler());
     }
 }
 
