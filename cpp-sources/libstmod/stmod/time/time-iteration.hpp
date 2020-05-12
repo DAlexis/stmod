@@ -1,7 +1,7 @@
 #ifndef TIME_ITER_HPP_INCLUDED
 #define TIME_ITER_HPP_INCLUDED
 
-#include "stmod/i-steppable.hpp"
+#include "stmod/time/time-iterable.hpp"
 
 #include <deal.II/base/time_stepping.h>
 #include <deal.II/lac/vector.h>
@@ -14,8 +14,9 @@ class VariablesCollector
 {
 public:
     VariablesCollector(const dealii::AffineConstraints<double>& constraints);
-    void add_steppable(ISteppable* steppable);
-    void add_pre_step(IPreStepJob* pre_step);
+    void add_derivatives_provider(VariableWithDerivative* steppable);
+    void add_pre_step_computator(IPreStepComputer* pre_step);
+    void add_implicit_steppable(IImplicitSteppable* implicit_steppable);
 
     dealii::Vector<double>& all_values();
     const dealii::Vector<double>& all_derivatives() const;
@@ -28,13 +29,18 @@ public:
 
     void compute(double t);
 
+    void implicit_deltas_collect(double t, double dt, double theta = 0.5);
+    void implicit_deltas_add();
+
 private:
     const dealii::AffineConstraints<double>& m_constraints;
 
     dealii::Vector<double>::size_type get_total_size();
 
-    std::vector<ISteppable*> m_steppables;
-    std::vector<IPreStepJob*> m_pre_step_jobs;
+    std::vector<VariableWithDerivative*> m_steppables;
+    std::vector<IPreStepComputer*> m_pre_step_jobs;
+    std::vector<IImplicitSteppable*> m_implicit_steppables;
+    std::vector<const dealii::Vector<double>*> m_implicit_deltas;
 
     dealii::Vector<double> m_values;
     dealii::Vector<double> m_derivatives;

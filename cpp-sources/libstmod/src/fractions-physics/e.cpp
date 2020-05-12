@@ -1,7 +1,7 @@
 #include "stmod/fractions-physics/e.hpp"
 #include "stmod/fe-sampler.hpp"
 #include "stmod/matgen.hpp"
-#include "stmod/mesh.hpp"
+#include "stmod/grid/grid.hpp"
 
 #include <deal.II/dofs/dof_tools.h>
 #include <deal.II/base/quadrature_lib.h>

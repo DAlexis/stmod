@@ -1,15 +1,15 @@
-#include "stmod/mesh-output.hpp"
+#include "stmod/output/output.hpp"
 
 #include <deal.II/numerics/data_out.h>
 
 #include <fstream>
 
-void FractionsOutputMaker::add(const IOutputProvider* fraction_data)
+void OutputMaker::add(const IOutputProvider* fraction_data)
 {
     m_fractions.push_back(fraction_data);
 }
 
-void FractionsOutputMaker::output(const dealii::DoFHandler<2>& dof_handler, const std::string& filename)
+void OutputMaker::output(const dealii::DoFHandler<2>& dof_handler, const std::string& filename)
 {
     dealii::DataOut<2> data_out;
     data_out.attach_dof_handler(dof_handler);

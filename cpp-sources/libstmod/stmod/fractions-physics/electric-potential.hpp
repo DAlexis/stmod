@@ -1,10 +1,11 @@
 #ifndef ELECTRIC_POTENTIAL_HPP_INCLUDED
 #define ELECTRIC_POTENTIAL_HPP_INCLUDED
 
-#include "stmod/i-output-provider.hpp"
-#include "stmod/i-steppable.hpp"
-#include "stmod/i-mesh-based.hpp"
+#include "stmod/output/output-provider.hpp"
+#include "stmod/time/time-iterable.hpp"
+#include "stmod/grid/mesh-based.hpp"
 #include "stmod/fe-common.hpp"
+#include "stmod/fractions/secondary-value.hpp"
 
 #include <deal.II/lac/sparse_direct.h>
 
@@ -14,24 +15,16 @@ struct ElectricParameters
     double bottom_potential = -3.0;
 };
 
-class ElectricPotential : public IOutputProvider, public IMeshBased, public IPreStepJob
+class ElectricPotential : public SecondaryValue//, public IPreStepJob
 {
 public:
     ElectricPotential(const FEGlobalResources& fe_res);
 
-    // IVariablesStorage
-    dealii::Vector<double>& values_w() override;
-
     // IMeshBased
     void init_mesh_dependent(const dealii::DoFHandler<2>& dof_handler) override;
-    const dealii::Vector<double>& error_estimation_vector() const override;
 
-    // IPreStepJob
+    // // IPreStepJob
     void compute(double t) override;
-
-    const std::string& output_name(size_t index) const override;
-    const dealii::Vector<double>& output_value(size_t index) const override;
-    virtual size_t output_values_count() const override;
 
     void add_charge(const dealii::Vector<double>& charge_vector, double mul = 1.0);
 
@@ -46,7 +39,6 @@ private:
      * It may be optimized later
      */
     void create_rhs();
-    void solve_lin_eq();
 
     ElectricParameters m_electric_parameters;
 
@@ -55,8 +47,6 @@ private:
     dealii::SparseMatrix<double> m_system_matrix;
     dealii::SparseDirectUMFPACK m_system_matrix_inverse;
     dealii::Vector<double> m_system_rhs;
-
-    dealii::Vector<double> m_solution;
 
     std::vector<const dealii::Vector<double>*> m_charges;
     std::vector<double> m_charges_muls;

@@ -1,47 +1,39 @@
 #ifndef FULL_MODELS_MODEL_ONE_HPP_INCLUDED
 #define FULL_MODELS_MODEL_ONE_HPP_INCLUDED
 
-#include "dsiterpp/time-iter.hpp"
-#include <memory>
+#include "stmod/grid/grid.hpp"
+#include "stmod/output/output.hpp"
 
-class Grid;
-class PoissonSolver;
-class FractionsStorage;
-class ElectronsRHS;
-class PoissonSolverRHSAdaptor;
-namespace dsiterpp {
-    class TimeIterator;
-    class RHSGroup;
-    class IIntegrator;
-    class IErrorEstimator;
-}
+class FEGlobalResources;
+class MeshRefiner;
+
+class ElectricPotential;
+class Electrons;
+class VariablesCollector;
 
 class ModelOne
 {
 public:
-    enum class Fractions : unsigned int
-    {
-        electrons = 0,
-        count
-    };
-
     ModelOne();
+    ~ModelOne();
+
+    void init_grid();
+    void init_fractions();
+    void assign_initial_values();
 
     void run();
-    void output_potential(const std::string& filename);
-    void output_fractions(const std::string& filename);
-
-    void output_hook(double real_time);
 
 private:
-    void init_grid();
-    void init_poisson_solver();
-    void init_fractions_storage();
-    void init_electrons();
+    Grid m_grid;
+    OutputMaker m_output_maker;
 
-    void init_time_iterator();
+    std::unique_ptr<BoundaryAssigner> m_boundary_assigner;
+    std::unique_ptr<FEGlobalResources> m_global_resources;
+    std::unique_ptr<MeshRefiner> m_refiner;
+    std::unique_ptr<VariablesCollector> m_variables_collector;
 
-    std::shared_ptr<Grid> m_grid;
+    std::unique_ptr<ElectricPotential> m_electric_potential;
+    std::unique_ptr<Electrons> m_electrons;
 };
 
 #endif // FULL_MODELS_MODEL_ONE_HPP_INCLUDED

@@ -2,7 +2,7 @@
 #define MESH_REFINER_HPP_INCLUDED
 
 #include "stmod/fe-common.hpp"
-#include "stmod/i-mesh-based.hpp"
+#include "stmod/grid/mesh-based.hpp"
 
 #include <vector>
 
@@ -10,7 +10,7 @@ class MeshRefiner
 {
 public:
     MeshRefiner(FEGlobalResources& fe_global_res);
-    void add_mesh_based(IMeshBased* object);
+    void add_mesh_based(MeshBased* object);
     void do_refine();
 
 private:
@@ -21,7 +21,7 @@ private:
     void refine_and_transfer();
 
     FEGlobalResources& m_fe_global_res;
-    std::vector<IMeshBased*> m_objects;
+    std::vector<MeshBased*> m_objects;
 
     std::vector<dealii::Vector<double>> m_solutions_to_transfer;
     std::vector<dealii::Vector<double>> m_solutions_transferred;

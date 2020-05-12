@@ -1,26 +1,25 @@
-#ifndef FRACTION_BASE_HPP_INCLUDED
-#define FRACTION_BASE_HPP_INCLUDED
+#ifndef FRACTION_HPP_INCLUDED
+#define FRACTION_HPP_INCLUDED
 
-#include "stmod/i-mesh-based.hpp"
-#include "stmod/i-output-provider.hpp"
-#include "stmod/i-steppable.hpp"
+#include "stmod/grid/mesh-based.hpp"
+#include "stmod/output/output-provider.hpp"
+#include "stmod/time/time-iterable.hpp"
 
 #include <deal.II/lac/vector.h>
 
-class Fraction : public IMeshBased, public IOutputProvider, public ISteppable
+class Fraction : public MeshBased, public IOutputProvider, public VariableWithDerivative
 {
 public:
     Fraction(const std::string& name);
 
     void init_mesh_dependent(const dealii::DoFHandler<2>& dof_handler) override;
 
-    void compute_derivetives(double t) override;
+    void compute_derivatives(double t) override;
 
     void add_single_source(double reaction_const, const dealii::Vector<double>& source);
     void add_pair_source(double reaction_const, const dealii::Vector<double>& source1, const dealii::Vector<double>& source2);
 
-    const dealii::Vector<double>& concentration() const;
-    dealii::Vector<double>& concentration_w();
+    dealii::Vector<double>& values_w() override;
 
     const dealii::Vector<double>& derivatives() const;
 
@@ -45,4 +44,10 @@ protected:
     const std::string m_name;
 };
 
-#endif // FRACTION_BASE_HPP_INCLUDED
+class FractionWithImplicit : public Fraction
+{
+public:
+    virtual const dealii::Vector<double>& get_implicit_delta(double dt, double theta = 0.5) = 0;
+};
+
+#endif // FRACTION_HPP_INCLUDED

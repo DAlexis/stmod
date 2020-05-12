@@ -1,4 +1,5 @@
-#include "stmod/fractions-physics/fraction-base.hpp"
+#include "stmod/fractions/fraction.hpp"
+
 
 Fraction::Fraction(const std::string& name) :
     m_name(name)
@@ -17,12 +18,7 @@ void Fraction::add_pair_source(double reaction_const, const dealii::Vector<doubl
     m_pair_reaction_consts.push_back(reaction_const);
 }
 
-const dealii::Vector<double>& Fraction::concentration() const
-{
-    return m_concentration;
-}
-
-dealii::Vector<double>& Fraction::concentration_w()
+dealii::Vector<double>& Fraction::values_w()
 {
     return m_concentration;
 }
@@ -54,7 +50,7 @@ void Fraction::init_mesh_dependent(const dealii::DoFHandler<2>& dof_handler)
     m_tmp.reinit(dof_handler.n_dofs());
 }
 
-void Fraction::compute_derivetives(double)
+void Fraction::compute_derivatives(double)
 {
     m_derivative = 0;
 

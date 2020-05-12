@@ -1,4 +1,4 @@
-#include "stmod/mesh-refiner.hpp"
+#include "stmod/grid/mesh-refiner.hpp"
 
 #include <deal.II/grid/grid_refinement.h>
 #include <deal.II/base/quadrature_lib.h>
@@ -12,7 +12,7 @@ MeshRefiner::MeshRefiner(FEGlobalResources& fe_global_res) :
 {
 }
 
-void MeshRefiner::add_mesh_based(IMeshBased* object)
+void MeshRefiner::add_mesh_based(MeshBased* object)
 {
     m_objects.push_back(object);
 }
@@ -32,7 +32,7 @@ void MeshRefiner::pull_values()
     m_solutions_to_transfer.resize(m_objects.size());
     for (size_t i = 0; i < m_objects.size(); i++)
     {
-        m_solutions_to_transfer[i] = m_objects[i]->values_w();
+        m_solutions_to_transfer[i] = m_objects[i]->values();
     }
 }
 

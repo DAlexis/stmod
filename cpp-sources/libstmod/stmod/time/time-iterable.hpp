@@ -1,28 +1,28 @@
 #ifndef I_STEPPABLE_HPP_INCLUDED
 #define I_STEPPABLE_HPP_INCLUDED
 
-#include "stmod/i-variables-storage.hpp"
+#include "stmod/variable.hpp"
 
 #include <deal.II/lac/vector.h>
 
-class ISteppable : public IVariablesStorage
+class VariableWithDerivative : public virtual Variable
 {
 public:
     virtual const dealii::Vector<double>& derivatives() const = 0;
-    virtual void compute_derivetives(double t) = 0;
+    virtual void compute_derivatives(double t) = 0;
 
-    virtual ~ISteppable() = default;
+    virtual ~VariableWithDerivative() = default;
 };
 
-class IPreStepJob
+class IPreStepComputer
 {
 public:
     virtual void compute(double t) = 0;
 
-    virtual ~IPreStepJob() = default;
+    virtual ~IPreStepComputer() = default;
 };
 
-class IImplicitSteppable
+class IImplicitSteppable : public virtual Variable
 {
 public:
     virtual const dealii::Vector<double>& get_implicit_delta(double dt, double theta = 0.5) = 0;

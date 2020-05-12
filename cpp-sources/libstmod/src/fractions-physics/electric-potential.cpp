@@ -2,7 +2,7 @@
 #include "stmod/matgen.hpp"
 #include "stmod/phys-consts.hpp"
 #include "stmod/matgen.hpp"
-#include "stmod/mesh.hpp"
+#include "stmod/grid/grid.hpp"
 
 #include <deal.II/dofs/dof_tools.h>
 #include <deal.II/numerics/vector_tools.h>
@@ -13,24 +13,14 @@
 using namespace dealii;
 
 ElectricPotential::ElectricPotential(const FEGlobalResources& fe_res) :
-    m_fe_global_res(fe_res)
+    SecondaryValue("Potential"), m_fe_global_res(fe_res)
 {
     //m_fe_res.set_boundary_cond_gen([this](auto & constraints) { add_boundary_conditions(constraints); });
 }
 
-dealii::Vector<double>& ElectricPotential::values_w()
-{
-    return m_solution;
-}
-
-const dealii::Vector<double>& ElectricPotential::error_estimation_vector() const
-{
-    return m_solution;
-}
-
 void ElectricPotential::init_mesh_dependent(const dealii::DoFHandler<2>& dof_handler)
 {
-    m_solution.reinit(m_fe_global_res.dof_handler().n_dofs());
+    SecondaryValue::init_mesh_dependent(dof_handler);
     m_system_rhs.reinit(m_fe_global_res.dof_handler().n_dofs());
     m_total_charge.reinit(m_fe_global_res.dof_handler().n_dofs());
 
@@ -68,13 +58,13 @@ void ElectricPotential::compute(double t)
 
     MatrixTools::apply_boundary_values(m_boundary_values,
                                      m_system_matrix,
-                                     m_solution,
+                                     m_value,
                                      m_system_rhs);
 
     m_system_matrix_inverse.initialize(m_system_matrix);
-    m_system_matrix_inverse.vmult(m_solution, m_system_rhs);
+    m_system_matrix_inverse.vmult(m_value, m_system_rhs);
 
-    m_fe_global_res.constraints().distribute(m_solution);
+    m_fe_global_res.constraints().distribute(m_value);
 
     std::cout << "Computing electric potential done" << std::endl;
 }
@@ -84,28 +74,6 @@ void ElectricPotential::create_rhs()
     m_system_rhs = 0;
     m_fe_global_res.mass_matrix().vmult(m_system_rhs, m_total_charge);
     m_system_rhs *= 1 / Consts::epsilon_0;
-}
-
-void ElectricPotential::solve_lin_eq()
-{
-    m_system_matrix_inverse.initialize(m_system_matrix);
-    m_system_matrix_inverse.vmult(m_solution, m_system_rhs);
-    m_fe_global_res.constraints().distribute(m_solution);
-}
-
-const std::string& ElectricPotential::output_name(size_t) const
-{
-    return m_name;
-}
-
-const dealii::Vector<double>& ElectricPotential::output_value(size_t) const
-{
-    return m_solution;
-}
-
-size_t ElectricPotential::output_values_count() const
-{
-    return 1;
 }
 
 void ElectricPotential::add_charge(const dealii::Vector<double>& charge_vector, double mul)

@@ -1,10 +1,10 @@
 #ifndef FRACTIONS_PHYSICS_E_HPP_INCLUDED
 #define FRACTIONS_PHYSICS_E_HPP_INCLUDED
 
-#include "stmod/fractions-physics/fraction-base.hpp"
-#include "stmod/i-output-provider.hpp"
-#include "stmod/i-steppable.hpp"
-#include "stmod/i-mesh-based.hpp"
+#include "stmod/fractions/fraction.hpp"
+#include "stmod/output/output-provider.hpp"
+#include "stmod/time/time-iterable.hpp"
+#include "stmod/grid/mesh-based.hpp"
 
 #include "stmod/fe-common.hpp"
 
