@@ -12,8 +12,7 @@ FESampler::FESampler(const dealii::DoFHandler<2>& dof_handler) :
     m_dof_handler(dof_handler),
     m_fe(m_dof_handler.get_fe()),
     m_support_points(m_fe.get_generalized_support_points()),
-    m_quad(m_support_points),
-    m_n_dofs(m_dof_handler.n_dofs())
+    m_quad(m_support_points)
 {
     init_vectors();
     generate_points();
@@ -21,10 +20,10 @@ FESampler::FESampler(const dealii::DoFHandler<2>& dof_handler) :
 
 void FESampler::init_vectors()
 {
-    m_points.resize(m_n_dofs);
-    m_values.resize(m_n_dofs);
-    m_gradients.resize(m_n_dofs);
-    m_laplacians.resize(m_n_dofs);
+    m_points.resize(m_dof_handler.n_dofs());
+    m_values.resize(m_dof_handler.n_dofs());
+    m_gradients.resize(m_dof_handler.n_dofs());
+    m_laplacians.resize(m_dof_handler.n_dofs());
 }
 
 void FESampler::sample_points()
@@ -50,7 +49,12 @@ void FESampler::sample_points()
 
 void FESampler::sample(dealii::Vector<double> solution, FESampler::Targets targets)
 {
-    if (m_n_dofs != solution.size())
+    if (m_values.size() != m_dof_handler.n_dofs())
+    {
+        init_vectors();
+    }
+
+    if (m_dof_handler.n_dofs() != solution.size())
     {
         throw std::range_error("FESampler::sample: m_dof_handler.n_dofs() != solution.size()");
     }
@@ -78,7 +82,7 @@ void FESampler::sample(dealii::Vector<double> solution, FESampler::Targets targe
             const unsigned int current_dof_index = local_dof_indices[i];
             m_points[current_dof_index] = fe_values.quadrature_point(i);
 
-            if (! (static_cast<unsigned int>(targets) & static_cast<unsigned int>(Targets::values)))
+            if (! (static_cast<unsigned int>(targets) & (static_cast<unsigned int>(Targets::values) | static_cast<unsigned int>(Targets::grad_lap))))
                 continue;
 
             const double solution_component = solution[current_dof_index];

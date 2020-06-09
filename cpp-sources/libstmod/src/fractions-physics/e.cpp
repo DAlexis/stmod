@@ -84,6 +84,13 @@ const dealii::Vector<double>& Electrons::get_implicit_delta(double dt, double th
     return m_implicit_delta;
 }
 
+Fraction& Electrons::operator=(double value)
+{
+    Variable::operator =(value);
+    m_fe_global_res.constraints().distribute(values_w());
+    return *this;
+}
+
 void Electrons::init_mesh_dependent(const dealii::DoFHandler<2>& dof_handler)
 {
     Fraction::init_mesh_dependent(dof_handler);
@@ -121,9 +128,4 @@ void Electrons::init_mesh_dependent(const dealii::DoFHandler<2>& dof_handler)
                                              BoundaryAssigner::outer_border,
                                              Functions::ZeroFunction<2>(),
                                              m_boundary_values);
-}
-
-const dealii::Vector<double>& Electrons::error_estimation_vector() const
-{
-    return m_concentration;
 }

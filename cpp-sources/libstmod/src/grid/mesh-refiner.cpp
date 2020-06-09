@@ -26,6 +26,11 @@ void MeshRefiner::do_refine()
     push_values();
 }
 
+void MeshRefiner::call_on_mesh_refine()
+{
+    update_objects();
+}
+
 
 void MeshRefiner::pull_values()
 {
@@ -63,13 +68,13 @@ void MeshRefiner::estimate()
             m_fe_global_res.dof_handler(),
             QGauss<2 - 1>(m_fe_global_res.dof_handler().get_fe().degree + 1),
             std::map<types::boundary_id, const Function<2> *>(),
-            object->error_estimation_vector(),
+            object->values(),
             estimated_error_per_cell
         );
 
         GridRefinement::refine_and_coarsen_fixed_fraction(m_fe_global_res.triangulation(),
                                                           estimated_error_per_cell,
-                                                          0.7,
+                                                          0.6,
                                                           0.4, 150000);
 
         if (m_fe_global_res.triangulation().n_levels() > max_grid_level)

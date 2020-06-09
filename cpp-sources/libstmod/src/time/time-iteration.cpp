@@ -35,7 +35,7 @@ const dealii::Vector<double>& VariablesCollector::all_derivatives() const
     return m_derivatives;
 }
 
-void VariablesCollector::push_values()
+void VariablesCollector::push_values(const Vector<double> &y)
 {
     assert_size();
     dealii::Vector<double>::size_type current_offset = 0;
@@ -43,7 +43,7 @@ void VariablesCollector::push_values()
     {
         auto & target_vector = steppable->values_w();
         copy_vector_part(target_vector, 0, target_vector.size(),
-                         m_values, current_offset);
+                         y, current_offset);
         current_offset += target_vector.size();
 
         m_constraints.distribute(target_vector);
@@ -117,6 +117,14 @@ void VariablesCollector::implicit_deltas_add()
     }
 }
 
+const dealii::Vector<double>& VariablesCollector::compute_derivatives(double t, const Vector<double> &y)
+{
+    push_values(y);
+    compute(t);
+    pull_derivatives();
+    return all_derivatives();
+}
+
 dealii::Vector<double>::size_type VariablesCollector::get_total_size()
 {
     dealii::Vector<double>::size_type total_size = 0;
@@ -178,7 +186,11 @@ void StmodTimeStepper::init()
 double StmodTimeStepper::iterate(VariablesCollector& collector, double t, double dt)
 {
     collector.resize();
+    // Reading values to single array
     collector.pull_values();
+
+    // Saving this array
+    m_on_explicit_begin = collector.all_values();
 /*
     // Trivial Euler variant
     collector.compute(t);
@@ -186,28 +198,33 @@ double StmodTimeStepper::iterate(VariablesCollector& collector, double t, double
     collector.all_values().add(0.00000005, collector.all_derivatives());*/
     double resulting_t = t;
 
+    // Making explicit time step
     if (collector.all_values().size() != 0)
     {
         resulting_t = m_embedded_stepper->evolve_one_time_step(
             [&collector](const double time, const Vector<double> &y)
             {
-                collector.push_values();
-                collector.compute(time);
-                collector.pull_derivatives();
-                return collector.all_derivatives();
+                return collector.compute_derivatives(time, y);
             },
-            t,
-            dt,
-            collector.all_values()
+            t, dt, collector.all_values()
         );
+
     } else {
         collector.compute(t);
         resulting_t += dt;
     }
+    // Saving explicit time step results
+    m_on_explicit_end = collector.all_values();
 
+    // Restoring old values to compute implicit part
+    collector.push_values(m_on_explicit_begin);
+    // Computing implicit deltas based on actual dt
     double actual_dt = resulting_t - t;
     collector.implicit_deltas_collect(t, actual_dt, 0.5);
-    collector.push_values();
+
+    // Restoring results of explicit step
+    collector.push_values(m_on_explicit_end);
+    // and adding deltas from implicit
     collector.implicit_deltas_add();
     return resulting_t;
 }

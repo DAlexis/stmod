@@ -10,8 +10,6 @@ class MeshBased : virtual public Variable
 {
 public:
     virtual void init_mesh_dependent(const dealii::DoFHandler<2>& dof_handler) = 0;
-
-    virtual const dealii::Vector<double>& error_estimation_vector() const = 0;
 };
 
 #endif // I_MESH_BASED_HPP_INCLUDED

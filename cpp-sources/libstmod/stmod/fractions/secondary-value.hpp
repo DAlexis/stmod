@@ -12,7 +12,6 @@ class SecondaryValue : public MeshBased, public IOutputProvider, public IPreStep
 public:
     SecondaryValue(const std::string& name);
 
-    const dealii::Vector<double>& error_estimation_vector() const;
     void init_mesh_dependent(const dealii::DoFHandler<2>& dof_handler) override;
     dealii::Vector<double>& values_w() override;
 
@@ -29,7 +28,7 @@ protected:
 class SecondaryConstant : public SecondaryValue
 {
 public:
-    SecondaryConstant(const std::string& name, double values = 0);
+    SecondaryConstant(const std::string& name, double values = 0.0);
 
     void compute(double t);
 

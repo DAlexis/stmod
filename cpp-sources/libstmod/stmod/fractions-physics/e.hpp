@@ -43,7 +43,6 @@ public:
 
     // IMeshBased
     void init_mesh_dependent(const dealii::DoFHandler<2>& dof_handler) override;
-    const dealii::Vector<double>& error_estimation_vector() const override;
 
     const dealii::Vector<double>& derivative() const;
 
@@ -52,6 +51,8 @@ public:
     void set_potential(const dealii::Vector<double>& potential);
 
     const dealii::Vector<double>& get_implicit_delta(double dt, double theta = 0.5);
+
+    Fraction& operator=(double value);
 
     ElectronsParameters parameters;
 
@@ -64,12 +65,6 @@ private:
 
     dealii::Vector<double> m_tmp_vector;
     dealii::Vector<double> m_implicit_rhs;
-
-    std::vector<const dealii::Vector<double>*> m_single_sources;
-    std::vector<double> m_single_reaction_consts;
-
-    std::vector<PairSourceTuple> m_pair_sources;
-    std::vector<double> m_pair_reaction_consts;
 
     dealii::SparseMatrix<double> m_E_grad_psi_psi_matrix;
 

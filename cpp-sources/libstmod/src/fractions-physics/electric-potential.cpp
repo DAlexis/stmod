@@ -13,7 +13,7 @@
 using namespace dealii;
 
 ElectricPotential::ElectricPotential(const FEGlobalResources& fe_res) :
-    SecondaryValue("Potential"), m_fe_global_res(fe_res)
+    SecondaryValue("Potential"), m_fe_global_res(fe_res), m_electric_field_sampler(m_fe_global_res.dof_handler())
 {
     //m_fe_res.set_boundary_cond_gen([this](auto & constraints) { add_boundary_conditions(constraints); });
 }
@@ -23,6 +23,8 @@ void ElectricPotential::init_mesh_dependent(const dealii::DoFHandler<2>& dof_han
     SecondaryValue::init_mesh_dependent(dof_handler);
     m_system_rhs.reinit(m_fe_global_res.dof_handler().n_dofs());
     m_total_charge.reinit(m_fe_global_res.dof_handler().n_dofs());
+    m_E_scalar.reinit(m_fe_global_res.dof_handler().n_dofs());
+    m_E_vector.resize(m_fe_global_res.dof_handler().n_dofs());
 
     m_system_matrix.reinit(m_fe_global_res.sparsity_pattern());
 
@@ -66,14 +68,8 @@ void ElectricPotential::compute(double t)
 
     m_fe_global_res.constraints().distribute(m_value);
 
+    create_e_field();
     std::cout << "Computing electric potential done" << std::endl;
-}
-
-void ElectricPotential::create_rhs()
-{
-    m_system_rhs = 0;
-    m_fe_global_res.mass_matrix().vmult(m_system_rhs, m_total_charge);
-    m_system_rhs *= 1 / Consts::epsilon_0;
 }
 
 void ElectricPotential::add_charge(const dealii::Vector<double>& charge_vector, double mul)
@@ -92,11 +88,34 @@ void ElectricPotential::set_electric_parameters(const ElectricParameters& electr
     m_electric_parameters = electric_parameters;
 }
 
+const std::vector<dealii::Point<2>>& ElectricPotential::E_vector()
+{
+    return m_E_vector;
+}
+
+const dealii::Vector<double>& ElectricPotential::E_scalar()
+{
+    return m_E_scalar;
+}
+
+
 void ElectricPotential::calc_total_charge()
 {
     m_total_charge = 0;
     for (size_t i=0; i < m_charges.size(); i++)
     {
         m_total_charge.add(m_charges_muls[i], *(m_charges[i]));
+    }
+}
+
+void ElectricPotential::create_e_field()
+{
+    m_electric_field_sampler.sample(m_value, FESampler::Targets::grad_lap);
+    auto & grads = m_electric_field_sampler.gradients();
+    for (auto i = 0; i < grads.size(); i++)
+    {
+        auto & grad = grads[i];
+        m_E_scalar[i] = grad.norm();
+        m_E_vector[i] = -grad;
     }
 }

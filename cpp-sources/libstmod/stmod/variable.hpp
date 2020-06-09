@@ -13,6 +13,14 @@ public:
     }
 
     virtual ~Variable() = default;
+
+    double operator[](dealii::types::global_dof_index i) const { return values()[i]; }
+
+    double& operator[](dealii::types::global_dof_index i) { return values_w()[i]; }
+
+    operator const dealii::Vector<double>& () { return values(); }
+
+    Variable& operator=(double value) { values_w() = value; return *this; }
 };
 
 #endif // VARIABLE_HPP_INCLUDED

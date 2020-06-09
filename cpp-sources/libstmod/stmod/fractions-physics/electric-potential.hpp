@@ -6,13 +6,14 @@
 #include "stmod/grid/mesh-based.hpp"
 #include "stmod/fe-common.hpp"
 #include "stmod/fractions/secondary-value.hpp"
+#include "stmod/fe-sampler.hpp"
 
 #include <deal.II/lac/sparse_direct.h>
 
 struct ElectricParameters
 {
-    double needle_potential = 10.0;
-    double bottom_potential = -3.0;
+    double needle_potential = 100.0;
+    double bottom_potential = 0.0;
 };
 
 class ElectricPotential : public SecondaryValue//, public IPreStepJob
@@ -32,13 +33,13 @@ public:
 
     void set_electric_parameters(const ElectricParameters& electric_parameters);
 
+    const std::vector<dealii::Point<2>>& E_vector();
+    const dealii::Vector<double>& E_scalar();
+
 private:
     void calc_total_charge();
 
-    /* @brief This function is boundary condition-dependent, so it should be called every potential change
-     * It may be optimized later
-     */
-    void create_rhs();
+    void create_e_field();
 
     ElectricParameters m_electric_parameters;
 
@@ -47,6 +48,11 @@ private:
     dealii::SparseMatrix<double> m_system_matrix;
     dealii::SparseDirectUMFPACK m_system_matrix_inverse;
     dealii::Vector<double> m_system_rhs;
+
+    dealii::Vector<double> m_E_scalar;
+    std::vector<dealii::Point<2>> m_E_vector;
+
+    FESampler m_electric_field_sampler;
 
     std::vector<const dealii::Vector<double>*> m_charges;
     std::vector<double> m_charges_muls;

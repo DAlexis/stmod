@@ -6,16 +6,38 @@ Fraction::Fraction(const std::string& name) :
 {
 }
 
-void Fraction::add_single_source(double reaction_const, const dealii::Vector<double>& source)
+Fraction& Fraction::add_source(double coeff, const dealii::Vector<double>& s1)
 {
-    m_single_sources.push_back(&source);
-    m_single_reaction_consts.push_back(reaction_const);
+    Source s;
+    s.coeff = coeff;
+    s.sources = {&s1};
+    m_sources.push_back(s);
+    return *this;
 }
 
-void Fraction::add_pair_source(double reaction_const, const dealii::Vector<double>& source1, const dealii::Vector<double>& source2)
+Fraction& Fraction::add_source(double coeff, const dealii::Vector<double>& s1, const dealii::Vector<double>& s2)
 {
-    m_pair_sources.push_back(PairSourceTuple(&source1, &source2));
-    m_pair_reaction_consts.push_back(reaction_const);
+    Source s;
+    s.coeff = coeff;
+    s.sources = {&s1, &s2};
+    m_sources.push_back(s);
+    return *this;
+}
+
+Fraction& Fraction::add_source(double coeff, const dealii::Vector<double>& s1, const dealii::Vector<double>& s2, const dealii::Vector<double>& s3)
+{
+    Source s;
+    s.coeff = coeff;
+    s.sources = {&s1, &s2, &s3};
+    return *this;
+}
+
+Fraction& Fraction::add_source(double coeff, const dealii::Vector<double>& s1, const dealii::Vector<double>& s2, const dealii::Vector<double>& s3, const dealii::Vector<double>& s4)
+{
+    Source s;
+    s.coeff = coeff;
+    s.sources = {&s1, &s2, &s3, &s4};
+    return *this;
 }
 
 dealii::Vector<double>& Fraction::values_w()
@@ -43,6 +65,12 @@ size_t Fraction::output_values_count() const
     return 1;
 }
 
+Fraction& Fraction::operator=(double value)
+{
+    m_concentration = value;
+    return *this;
+}
+
 void Fraction::init_mesh_dependent(const dealii::DoFHandler<2>& dof_handler)
 {
     m_derivative.reinit(dof_handler.n_dofs());
@@ -53,15 +81,19 @@ void Fraction::init_mesh_dependent(const dealii::DoFHandler<2>& dof_handler)
 void Fraction::compute_derivatives(double)
 {
     m_derivative = 0;
-
-    for (size_t i = 0; i < m_single_sources.size(); i++)
+    for (auto & s : m_sources)
     {
-        m_derivative.add(m_single_reaction_consts[i], (*m_single_sources[i]));
+        add_source_to_derivative(s);
     }
+}
 
-    for (size_t i = 0; i < m_pair_sources.size(); i++)
+void Fraction::add_source_to_derivative(const Source& src)
+{
+    m_tmp = *src.sources[0];
+    m_tmp *= src.coeff;
+    for (size_t i = 1; i < src.sources.size(); i++)
     {
-        m_tmp = *std::get<0>(m_pair_sources[i]) * *std::get<1>(m_pair_sources[i]);
-        m_derivative.add(m_pair_reaction_consts[i], m_tmp);
+        m_tmp.scale(*src.sources[i]);
     }
+    m_derivative += m_tmp;
 }

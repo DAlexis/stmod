@@ -5,11 +5,6 @@ SecondaryValue::SecondaryValue(const std::string& name) :
 {
 }
 
-const dealii::Vector<double>& SecondaryValue::error_estimation_vector() const
-{
-    return m_value;
-}
-
 void SecondaryValue::init_mesh_dependent(const dealii::DoFHandler<2>& dof_handler)
 {
     m_value.reinit(dof_handler.n_dofs());

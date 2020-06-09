@@ -21,9 +21,17 @@ public:
     dealii::Vector<double>& all_values();
     const dealii::Vector<double>& all_derivatives() const;
 
-    void push_values();
-
     void resize();
+
+    /**
+     * @brief Push specified values to fractions. Internal storage is unchanged
+     * @param y - array to push
+     */
+    void push_values(const dealii::Vector<double> &y);
+
+    /**
+     * @brief Pull values from fractions to internal storage
+     */
     void pull_values();
     void pull_derivatives();
 
@@ -31,6 +39,16 @@ public:
 
     void implicit_deltas_collect(double t, double dt, double theta = 0.5);
     void implicit_deltas_add();
+
+
+
+    /**
+     * @brief Push specified values, compute and pull derivatives into internal storage
+     * @param t - time
+     * @param y - point where to compute
+     * @return derivatives vector (reference to internal derivatives storage)
+     */
+    const dealii::Vector<double>& compute_derivatives(double t, const dealii::Vector<double> &y);
 
 private:
     const dealii::AffineConstraints<double>& m_constraints;
@@ -64,6 +82,9 @@ public:
 private:
     std::shared_ptr<dealii::TimeStepping::ExplicitRungeKutta<dealii::Vector<double>>> m_stepper;
     std::shared_ptr<dealii::TimeStepping::EmbeddedExplicitRungeKutta<dealii::Vector<double>>> m_embedded_stepper;
+
+    dealii::Vector<double> m_on_explicit_begin;
+    dealii::Vector<double> m_on_explicit_end;
     //dealii::TimeStepping::EmbeddedExplicitRungeKutta<dealii::Vector<double>> m_explicit_runge_kutta_stepper;
 };
 

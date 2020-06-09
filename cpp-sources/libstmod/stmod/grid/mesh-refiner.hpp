@@ -12,6 +12,7 @@ public:
     MeshRefiner(FEGlobalResources& fe_global_res);
     void add_mesh_based(MeshBased* object);
     void do_refine();
+    void call_on_mesh_refine();
 
 private:
     void pull_values();
