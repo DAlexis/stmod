@@ -84,12 +84,21 @@ void ModelOne::init_fractions()
 
     std::cout << "   Fractions added" << std::endl;
 
+
     add_secondary(m_heat_power, new SecondaryFunction("heat_power",
         [this](dealii::types::global_dof_index i, double)
         {
             double Ne = m_Ne->values()[i];
             double E = m_electric_potential->E_scalar()[i];
             return 1.6e-19 * (5.92 * Ne) * pow(E, 2);
+        }
+    ));
+
+    add_secondary(m_E_field, new SecondaryFunction("E_field",
+        [this](dealii::types::global_dof_index i, double)
+        {
+            double E = m_electric_potential->E_scalar()[i];
+            return E;
         }
     ));
 
@@ -465,9 +474,10 @@ void ModelOne::init_fractions()
 
     double initial_Ne = 1e13;
 
-    assign_initial_values();
+    *m_Ne = initial_Ne;
+    //assign_test_initial_values();
 
-    //*m_Ne = initial_Ne;
+
 
     // O_minus
     m_O_minus->add_source(1.0, *m_k_10, *m_O_2, *m_Ne)
@@ -620,14 +630,14 @@ void ModelOne::init_fractions()
     std::cout << "   All fractions setup done" << std::endl;
 }
 
-void ModelOne::assign_initial_values()
+void ModelOne::assign_test_initial_values()
 {
     FieldAssigner fa(m_global_resources->dof_handler());
     fa.assign_fiend(
         m_Ne->value_w(),
         [](const dealii::Point<2>& point) -> double
         {
-            return 1e13*exp(- (pow((point[0]-0.0075) / 0.002, 2.0) + pow((point[1] - 0.012 ) / 0.005, 2.0)));
+            return 1e13*exp(- (pow((point[0]) / 0.002, 2.0) + pow((point[1] - 0.012 ) / 0.005, 2.0)));
         }
     );
 }
@@ -651,7 +661,7 @@ void ModelOne::run()
     //return 0.0;
 
     double t = 0;
-    double dt = 1e-10;
+    double dt = 1e-12;
     double last_output_t = t;
     for (int i = 0; i < 100000; i++)
     {

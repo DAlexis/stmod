@@ -25,7 +25,7 @@ void VariablesCollector::add_implicit_steppable(IImplicitSteppable* implicit_ste
     m_implicit_steppables.push_back(implicit_steppable);
 }
 
-dealii::Vector<double>& VariablesCollector::all_values()
+dealii::Vector<double>& VariablesCollector::stored_values()
 {
     return m_values;
 }
@@ -57,7 +57,7 @@ void VariablesCollector::resize()
     m_derivatives.reinit(size);
 }
 
-void VariablesCollector::pull_values()
+void VariablesCollector::pull_values_to_storage()
 {
     assert_size();
     dealii::Vector<double>::size_type current_offset = 0;
@@ -87,7 +87,7 @@ void VariablesCollector::pull_derivatives()
 
 void VariablesCollector::compute(double t)
 {
-    std::cout << "VariablesCollector::compute for t = " << t << std::endl;
+    //std::cout << "VariablesCollector::compute for t = " << t << std::endl;
 
     for (auto pre_step : m_pre_step_jobs)
     {
@@ -185,12 +185,13 @@ void StmodTimeStepper::init()
 
 double StmodTimeStepper::iterate(VariablesCollector& collector, double t, double dt)
 {
+    std::cout << "=> Time step on t = " << t << std::endl;
     collector.resize();
     // Reading values to single array
-    collector.pull_values();
+    collector.pull_values_to_storage();
 
     // Saving this array
-    m_on_explicit_begin = collector.all_values();
+    m_on_explicit_begin = collector.stored_values();
 /*
     // Trivial Euler variant
     collector.compute(t);
@@ -198,34 +199,43 @@ double StmodTimeStepper::iterate(VariablesCollector& collector, double t, double
     collector.all_values().add(0.00000005, collector.all_derivatives());*/
     double resulting_t = t;
 
+    std::cout << "   Substeps: " << std::flush;
     // Making explicit time step
-    if (collector.all_values().size() != 0)
+    if (collector.stored_values().size() != 0)
     {
         resulting_t = m_embedded_stepper->evolve_one_time_step(
             [&collector](const double time, const Vector<double> &y)
             {
+                std::cout << "t = " << time << " | " << std::flush;
                 return collector.compute_derivatives(time, y);
             },
-            t, dt, collector.all_values()
+            t, dt, collector.stored_values()
         );
 
     } else {
+        // @todo check this branch
         collector.compute(t);
         resulting_t += dt;
     }
+
+    std::cout << "done" << std::endl;
+
     // Saving explicit time step results
-    m_on_explicit_end = collector.all_values();
+    m_on_explicit_end = collector.stored_values();
 
     // Restoring old values to compute implicit part
     collector.push_values(m_on_explicit_begin);
     // Computing implicit deltas based on actual dt
     double actual_dt = resulting_t - t;
+
+    std::cout << "   Implicit step on t = " << t << " with dt = " << actual_dt << "..." << std::endl;
     collector.implicit_deltas_collect(t, actual_dt, 0.5);
 
     // Restoring results of explicit step
     collector.push_values(m_on_explicit_end);
     // and adding deltas from implicit
     collector.implicit_deltas_add();
+    std::cout << "   done, t changed from " << t << " to " << resulting_t << " with dt = " << actual_dt << "." << std::endl;
     return resulting_t;
 }
 

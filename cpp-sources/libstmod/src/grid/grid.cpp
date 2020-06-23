@@ -117,7 +117,7 @@ BoundaryAssigner::BoundaryAssigner(Grid& grid) :
 void BoundaryAssigner::assign_boundary_ids()
 {
     dealii::Triangulation<2>& tria = m_grid.triangulation();
-    const double eps = 0.0001;
+    const double eps = 0.000001;
 
     for (auto cell = tria.begin_active(); cell != tria.end(); ++cell)
     {

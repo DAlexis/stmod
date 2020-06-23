@@ -9,8 +9,8 @@ scale = 1.0e-3;
 
 needle_rad = 200e-3 * scale;
 needle_len = 5 * scale;
-cyl_height = 25 * scale;
-cyl_rad = 15 * scale;
+cyl_height = 20 * scale;
+cyl_rad = 12 * scale;
 
 //+
 
@@ -25,14 +25,14 @@ Point(5) = {0, needle_len, 0, 1.0};*/
 
 
 // Top needle
-Point(6) = {0, cyl_height-needle_len-needle_rad, 0, needle_rad / 4.0};
-Point(7) = {0, cyl_height-needle_len, 0, needle_rad / 4.0};
-Point(8) = {needle_rad, cyl_height-needle_len, 0, needle_rad / 4.0};
-Point(9) = {needle_rad, cyl_height, 0, needle_rad};
+Point(6) = {0, cyl_height-needle_len-needle_rad, 0, needle_rad / 6.0};
+Point(7) = {0, cyl_height-needle_len, 0, needle_rad / 6.0};
+Point(8) = {needle_rad, cyl_height-needle_len, 0, needle_rad / 6.0};
+Point(9) = {needle_rad, cyl_height, 0, needle_rad / 2.0};
 
 // Contour
-Point(10) = {cyl_rad, cyl_height, 0, cyl_rad / 5.0};
-Point(11) = {cyl_rad, 0, 0, cyl_rad / 5.0};
+Point(10) = {cyl_rad, cyl_height, 0, cyl_rad / 15.0};
+Point(11) = {cyl_rad, 0, 0, cyl_rad / 10.0};
 
 //+
 Line(1) = {8, 9};

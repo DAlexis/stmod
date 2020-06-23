@@ -50,7 +50,7 @@ const dealii::Vector<double>& Electrons::get_implicit_delta(double dt, double th
             m_fe_global_res.dof_handler(),
             m_tmp_matrix);
 
-    m_implicit_system_matrix.add(-dt*theta*parameters.mu_e, m_tmp_matrix);
+    m_implicit_system_matrix.add(-dt*theta*parameters.mu_e * (-1.0), m_tmp_matrix);
     m_implicit_system_matrix.add(-dt*theta*parameters.D_e, m_fe_global_res.laplace_matrix());
 
     //m_implicit_system_matrix.add(-dt*theta*parameters.mu_e, m_E_grad_psi_psi_matrix);
@@ -59,7 +59,7 @@ const dealii::Vector<double>& Electrons::get_implicit_delta(double dt, double th
     // Creating implicit RHS
     m_implicit_rhs_matrix = 0;
     m_implicit_rhs_matrix.add(dt*parameters.D_e, m_fe_global_res.laplace_matrix());
-    m_implicit_rhs_matrix.add(dt*parameters.mu_e, m_tmp_matrix);
+    m_implicit_rhs_matrix.add(dt*parameters.mu_e * (-1.0), m_tmp_matrix);
     //m_implicit_rhs_matrix.add(dt*parameters.mu_e, m_E_grad_psi_psi_matrix);
 
     m_implicit_rhs = 0;

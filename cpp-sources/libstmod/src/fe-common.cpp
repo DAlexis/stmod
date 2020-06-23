@@ -26,7 +26,7 @@ FEGlobalResources::FEGlobalResources(dealii::Triangulation<2>& triangulation, un
         [this](dealii::SparseMatrix<double>& matrix)
         {
             matrix.reinit(m_sparsity_pattern);
-            std::cout << "Creating r-laplace matrix..." << std::endl;
+            //std::cout << "Creating r-laplace matrix..." << std::endl;
             create_r_laplace_matrix_axial(m_dof_handler,
                                            matrix);
             /*
@@ -42,7 +42,7 @@ FEGlobalResources::FEGlobalResources(dealii::Triangulation<2>& triangulation, un
         [this](dealii::SparseMatrix<double>& matrix)
         {
             matrix.reinit(m_sparsity_pattern);
-            std::cout << "Creating r-mass matrix..." << std::endl;
+            //std::cout << "Creating r-mass matrix..." << std::endl;
             create_r_mass_matrix_axial(m_dof_handler,
                                            matrix);
             /*
@@ -57,7 +57,7 @@ FEGlobalResources::FEGlobalResources(dealii::Triangulation<2>& triangulation, un
         [this](SparseTensor3& tensor)
         {
             tensor.clear();
-            std::cout << "Creating grad_phi_i_grad_phi_j_dot_r_phi_k tensor..." << std::endl;
+            //std::cout << "Creating grad_phi_i_grad_phi_j_dot_r_phi_k tensor..." << std::endl;
             create_grad_phi_i_grad_phi_j_dot_r_phi_k(
                     m_dof_handler,
                     tensor);

@@ -18,7 +18,7 @@ public:
     void add_pre_step_computator(IPreStepComputer* pre_step);
     void add_implicit_steppable(IImplicitSteppable* implicit_steppable);
 
-    dealii::Vector<double>& all_values();
+    dealii::Vector<double>& stored_values();
     const dealii::Vector<double>& all_derivatives() const;
 
     void resize();
@@ -32,7 +32,7 @@ public:
     /**
      * @brief Pull values from fractions to internal storage
      */
-    void pull_values();
+    void pull_values_to_storage();
     void pull_derivatives();
 
     void compute(double t);

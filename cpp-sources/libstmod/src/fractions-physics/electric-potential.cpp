@@ -9,6 +9,8 @@
 #include <deal.II/numerics/matrix_tools.h>
 #include <deal.II/lac/solver_cg.h>
 #include <deal.II/lac/precondition.h>
+#include <deal.II/fe/fe_q.h>
+#include <deal.II/fe/fe_values.h>
 
 using namespace dealii;
 
@@ -43,7 +45,7 @@ void ElectricPotential::init_mesh_dependent(const dealii::DoFHandler<2>& dof_han
 
 void ElectricPotential::compute(double t)
 {
-    std::cout << "Computing electric potential..." << std::endl;
+    //std::cout << "Computing electric potential..." << std::endl;
 
     m_total_charge = 0;
     for (size_t i=0; i < m_charges.size(); i++)
@@ -69,7 +71,7 @@ void ElectricPotential::compute(double t)
     m_fe_global_res.constraints().distribute(m_value);
 
     create_e_field();
-    std::cout << "Computing electric potential done" << std::endl;
+    //std::cout << "Computing electric potential done" << std::endl;
 }
 
 void ElectricPotential::add_charge(const dealii::Vector<double>& charge_vector, double mul)
@@ -88,7 +90,7 @@ void ElectricPotential::set_electric_parameters(const ElectricParameters& electr
     m_electric_parameters = electric_parameters;
 }
 
-const std::vector<dealii::Point<2>>& ElectricPotential::E_vector()
+const std::vector<Tensor<1, 2>>& ElectricPotential::E_vector()
 {
     return m_E_vector;
 }
@@ -110,6 +112,41 @@ void ElectricPotential::calc_total_charge()
 
 void ElectricPotential::create_e_field()
 {
+    m_E_vector.resize(m_fe_global_res.n_dofs());
+    m_E_scalar.reinit(m_fe_global_res.n_dofs());
+
+    const dealii::Quadrature<2> & support_points = m_fe_global_res.fe().get_generalized_support_points();
+    FEValues<2> fe_values(m_fe_global_res.fe(), support_points, update_gradients);
+
+    const unsigned int dofs_per_cell = m_fe_global_res.fe().dofs_per_cell;
+    const unsigned int n_support_points  = support_points.size();
+
+    std::vector<types::global_dof_index> local_dof_indices(dofs_per_cell);
+
+    for (const auto &cell : m_fe_global_res.dof_handler().active_cell_iterators())
+    {
+        fe_values.reinit(cell);
+        cell->get_dof_indices(local_dof_indices);
+        // target_support_point_index -- index of support point where we need to calculate gradient
+        for (unsigned int target_support_point_index = 0; target_support_point_index < n_support_points; ++target_support_point_index)
+        {
+            Tensor<1, 2> gradient_value;
+            for (unsigned int i = 0; i < dofs_per_cell; ++i) // Iterating over all base functions in this cell
+            {
+                const unsigned int current_dof_index = local_dof_indices[i];
+                const double current_coefficient = m_value[current_dof_index];
+                gradient_value += current_coefficient * fe_values.shape_grad(target_support_point_index, i);
+            }
+            m_E_vector[local_dof_indices[target_support_point_index]] = -gradient_value;
+        }
+    }
+
+    for (types::global_dof_index i = 0; i < m_E_vector.size(); i++)
+    {
+        m_E_scalar[i] = m_E_vector[i].norm();
+    }
+
+    /*
     m_electric_field_sampler.sample(m_value, FESampler::Targets::grad_lap);
     auto & grads = m_electric_field_sampler.gradients();
     for (auto i = 0; i < grads.size(); i++)
@@ -117,5 +154,6 @@ void ElectricPotential::create_e_field()
         auto & grad = grads[i];
         m_E_scalar[i] = grad.norm();
         m_E_vector[i] = -grad;
-    }
+    }*/
+
 }

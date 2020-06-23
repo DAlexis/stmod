@@ -23,7 +23,7 @@ public:
 
     void init_grid();
     void init_fractions();
-    void assign_initial_values();
+    void assign_test_initial_values();
 
     void run();
 
@@ -53,6 +53,8 @@ private:
     std::unique_ptr<SecondaryValue> m_f_v;
     std::unique_ptr<SecondaryValue> m_heat_power;
     std::unique_ptr<SecondaryValue> m_L;
+
+    std::unique_ptr<SecondaryValue> m_E_field;
 
     // Additional secondary functions
     std::unique_ptr<SecondaryValue> m_k_1;
