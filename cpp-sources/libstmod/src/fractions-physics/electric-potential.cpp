@@ -25,10 +25,23 @@ void ElectricPotential::init_mesh_dependent(const dealii::DoFHandler<2>& dof_han
     SecondaryValue::init_mesh_dependent(dof_handler);
     m_system_rhs.reinit(m_fe_global_res.dof_handler().n_dofs());
     m_total_charge.reinit(m_fe_global_res.dof_handler().n_dofs());
-    m_E_scalar.reinit(m_fe_global_res.dof_handler().n_dofs());
+
     m_E_vector.resize(m_fe_global_res.dof_handler().n_dofs());
 
+    m_Ex_rhs.reinit(m_fe_global_res.dof_handler().n_dofs());
+    m_Ey_rhs.reinit(m_fe_global_res.dof_handler().n_dofs());
+
+    m_E_scalar.reinit(m_fe_global_res.dof_handler().n_dofs());
+    m_E_x.reinit(m_fe_global_res.dof_handler().n_dofs());
+    m_E_y.reinit(m_fe_global_res.dof_handler().n_dofs());
+
     m_system_matrix.reinit(m_fe_global_res.sparsity_pattern());
+    m_E_x_rhs_matrix.reinit(m_fe_global_res.sparsity_pattern());
+    m_E_y_rhs_matrix.reinit(m_fe_global_res.sparsity_pattern());
+
+    m_mass_matrix_inverse.initialize(m_fe_global_res.mass_matrix());
+    create_r_grad_phi_i_comp_phi_j_axial(m_fe_global_res.dof_handler(), m_E_x_rhs_matrix, 0);
+    create_r_grad_phi_i_comp_phi_j_axial(m_fe_global_res.dof_handler(), m_E_y_rhs_matrix, 1);
 
     // Creating bounndary values map
     m_boundary_values.clear();
@@ -112,6 +125,23 @@ void ElectricPotential::calc_total_charge()
 
 void ElectricPotential::create_e_field()
 {
+    m_E_x = 0;
+    m_E_y = 0;
+
+    m_E_x_rhs_matrix.vmult(m_Ex_rhs, m_value);
+    m_mass_matrix_inverse.vmult(m_E_x, m_Ex_rhs);
+    m_fe_global_res.constraints().distribute(m_Ex_rhs);
+
+    m_E_y_rhs_matrix.vmult(m_Ey_rhs, m_value);
+    m_mass_matrix_inverse.vmult(m_E_y, m_Ey_rhs);
+    m_fe_global_res.constraints().distribute(m_Ey_rhs);
+
+    for (unsigned int i = 0; i < m_E_scalar.size(); i++)
+    {
+        m_E_scalar[i] = sqrt(pow(m_E_x[i], 2) + pow(m_E_y[i], 2));
+    }
+
+    /*
     m_E_vector.resize(m_fe_global_res.n_dofs());
     m_E_scalar.reinit(m_fe_global_res.n_dofs());
 
@@ -144,7 +174,7 @@ void ElectricPotential::create_e_field()
     for (types::global_dof_index i = 0; i < m_E_vector.size(); i++)
     {
         m_E_scalar[i] = m_E_vector[i].norm();
-    }
+    }*/
 
     /*
     m_electric_field_sampler.sample(m_value, FESampler::Targets::grad_lap);
@@ -156,4 +186,50 @@ void ElectricPotential::create_e_field()
         m_E_vector[i] = -grad;
     }*/
 
+}
+
+const std::string& ElectricPotential::output_name(size_t index) const
+{
+    switch (index) {
+    case 0:
+    {
+        return m_name_pot;
+    }
+    case 1:
+    {
+        return m_name_Ex;
+    }
+    case 2:
+    {
+        return m_name_Ey;
+    }
+    case 3:
+    {
+        return m_name_E;
+    }
+
+    default:
+        throw std::invalid_argument("Invalid output index");
+    }
+}
+
+const dealii::Vector<double>& ElectricPotential::output_value(size_t index) const
+{
+    switch (index) {
+    case 0:
+        return m_value;
+    case 1:
+        return m_E_x;
+    case 2:
+        return m_E_y;
+    case 3:
+        return m_E_scalar;
+    default:
+        throw std::invalid_argument("Invalid output index");
+    }
+}
+
+size_t ElectricPotential::output_values_count() const
+{
+    return 4;
 }

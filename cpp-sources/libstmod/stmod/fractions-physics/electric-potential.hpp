@@ -33,18 +33,35 @@ public:
     const std::vector<dealii::Tensor<1, 2>>& E_vector();
     const dealii::Vector<double>& E_scalar();
 
+    const std::string& output_name(size_t index) const override;
+    const dealii::Vector<double>& output_value(size_t index) const override;
+    size_t output_values_count() const override;
+
 private:
     void calc_total_charge();
 
     void create_e_field();
+    void create_rhs_matrix(unsigned int component);
 
     ElectricParameters m_electric_parameters;
 
     const FEGlobalResources& m_fe_global_res;
 
     dealii::SparseMatrix<double> m_system_matrix;
+
+    dealii::SparseMatrix<double> m_E_x_rhs_matrix;
+    dealii::SparseMatrix<double> m_E_y_rhs_matrix;
+
+    dealii::SparseDirectUMFPACK m_mass_matrix_inverse;
+
     dealii::SparseDirectUMFPACK m_system_matrix_inverse;
+
     dealii::Vector<double> m_system_rhs;
+    dealii::Vector<double> m_E_x;
+    dealii::Vector<double> m_E_y;
+
+    dealii::Vector<double> m_Ex_rhs;
+    dealii::Vector<double> m_Ey_rhs;
 
     dealii::Vector<double> m_E_scalar;
     std::vector<dealii::Tensor<1, 2>> m_E_vector;
@@ -60,6 +77,10 @@ private:
     double m_needle_potential = 0, m_bottom_potential = 0;
 
     const std::string m_name = "Electric_potential";
+    const std::string m_name_pot = "electric_field_phi";
+    const std::string m_name_Ex = "electric_field_Ex";
+    const std::string m_name_Ey = "electric_field_Ey";
+    const std::string m_name_E = "electric_field_E";
 };
 
 #endif // ELECTRIC_POTENTIAL_HPP_INCLUDED

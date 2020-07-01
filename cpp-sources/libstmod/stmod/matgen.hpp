@@ -59,6 +59,14 @@ void create_r_mass_matrix_axial(
         const dealii::Quadrature<2> & quadrature = dealii::QGauss<2>(/*degree = */ 3),
         double r_epsilon = 1e-4);
 
+void create_r_grad_phi_i_comp_phi_j_axial(
+        const dealii::DoFHandler<2, 2>& dof_handler,
+        dealii::SparseMatrix<double> &sparse_matrix,
+        unsigned int component,
+        const dealii::AffineConstraints<double> & constraints = dealii::AffineConstraints<double>(),
+        const dealii::Quadrature<2> & quadrature = dealii::QGauss<2>(/*degree = */ 3),
+        double r_epsilon = 1e-4);
+
 void create_phi_i_phi_j_dot_r_phi_k(
         const dealii::DoFHandler<2, 2>& dof_handler,
         SparseTensor3& tensor,

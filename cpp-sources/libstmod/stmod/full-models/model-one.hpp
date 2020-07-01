@@ -14,6 +14,7 @@ class Fraction;
 class SecondaryValue;
 class SecondaryConstant;
 class SecondaryFunction;
+class HeatPower;
 
 class ModelOne
 {
@@ -44,6 +45,7 @@ private:
 
     // Main secondary functions
     std::unique_ptr<ElectricPotential> m_electric_potential;
+    std::unique_ptr<HeatPower> m_heat_power_2;
 
     std::unique_ptr<SecondaryValue> m_M;
     std::unique_ptr<SecondaryValue> m_N_2;

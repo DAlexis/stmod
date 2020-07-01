@@ -4,6 +4,7 @@ project(stmod)
 
 find_package(VTK REQUIRED)
 find_package(deal.II REQUIRED)
+find_package(TBB REQUIRED)
 #include(${VTK_USE_FILE})
 
 set(LIB_SOURCE
@@ -53,7 +54,7 @@ set(LIB_HPP
 )
 
 add_library(${PROJECT_NAME} STATIC ${LIB_SOURCE} ${LIB_HPP})
-target_link_libraries(${PROJECT_NAME} PUBLIC profiler dsiterpp ${DEAL_II_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} PUBLIC profiler tbb ${DEAL_II_LIBRARIES})
 target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR} ${DEAL_II_INCLUDE_DIRS})
 
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_rvalue_references)

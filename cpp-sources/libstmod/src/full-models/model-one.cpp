@@ -4,6 +4,7 @@
 #include "stmod/field-output.hpp"
 #include "stmod/fractions/fraction.hpp"
 #include "stmod/fractions-physics/e.hpp"
+#include "stmod/fractions-physics/heat-power.hpp"
 #include "stmod/fractions-physics/electric-potential.hpp"
 #include "stmod/output/output.hpp"
 #include "stmod/time/time-iteration.hpp"
@@ -76,14 +77,18 @@ void ModelOne::init_fractions()
     add_fraction(m_O_3, new Fraction ("O_3"));
     add_fraction(m_T, new Fraction ("T"));
 
+    std::cout << "   Fractions added" << std::endl;
+
     // Creating main secondary functions
     m_electric_potential.reset(new ElectricPotential (*m_global_resources));
     m_refiner->add_mesh_based(m_electric_potential.get());
     m_variables_collector->add_pre_step_computator(m_electric_potential.get());
     m_output_maker.add(m_electric_potential.get());
-
-    std::cout << "   Fractions added" << std::endl;
-
+/*
+    m_heat_power_2.reset(new HeatPower (*m_global_resources, m_Ne->values(), m_electric_potential->values(), m_Ne->parameters.mu_e));
+    m_refiner->add_mesh_based(m_heat_power_2.get());
+    m_variables_collector->add_pre_step_computator(m_heat_power_2.get());
+    m_output_maker.add(m_heat_power_2.get());*/
 
     add_secondary(m_heat_power, new SecondaryFunction("heat_power",
         [this](dealii::types::global_dof_index i, double)
