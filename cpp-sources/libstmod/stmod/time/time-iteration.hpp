@@ -35,11 +35,10 @@ public:
     void pull_values_to_storage();
     void pull_derivatives();
 
-    void compute(double t);
+    void compute_in_places(double t);
 
     void implicit_deltas_collect(double t, double dt, double theta = 0.5);
     void implicit_deltas_add();
-
 
 
     /**
@@ -48,9 +47,12 @@ public:
      * @param y - point where to compute
      * @return derivatives vector (reference to internal derivatives storage)
      */
-    const dealii::Vector<double>& compute_derivatives(double t, const dealii::Vector<double> &y);
+    const dealii::Vector<double>& compute_derivatives(double t, const dealii::Vector<double> &y, double limiting_dt);
 
 private:
+    static void limit_derivatives(double dt, const dealii::Vector<double>& y, dealii::Vector<double>& derivatives);
+    void assert_finite(); /// @todo Function not ready!
+
     const dealii::AffineConstraints<double>& m_constraints;
 
     dealii::Vector<double>::size_type get_total_size();
@@ -80,6 +82,7 @@ public:
     double iterate(VariablesCollector& collector, double t, double dt);
 
 private:
+    static void remove_negative(dealii::Vector<double>& values);
     std::shared_ptr<dealii::TimeStepping::ExplicitRungeKutta<dealii::Vector<double>>> m_stepper;
     std::shared_ptr<dealii::TimeStepping::EmbeddedExplicitRungeKutta<dealii::Vector<double>>> m_embedded_stepper;
 

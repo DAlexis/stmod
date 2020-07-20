@@ -14,7 +14,6 @@ class Fraction;
 class SecondaryValue;
 class SecondaryConstant;
 class SecondaryFunction;
-class HeatPower;
 
 class ModelOne
 {
@@ -27,13 +26,17 @@ public:
     void assign_test_initial_values();
 
     void run();
+    void interrupt();
 
 private:
+    std::string make_output_filename(double t);
     void add_secondary(std::unique_ptr<SecondaryValue>& uniq_ptr, SecondaryValue* value, bool need_output = true);
     void add_fraction(std::unique_ptr<Fraction>& uniq_ptr, Fraction* fraction);
 
     static double secondary_L(double T, double M);
     static double secondary_M(double T);
+
+    bool m_interrupt = false;
 
     Grid m_grid;
     OutputMaker m_output_maker;
@@ -45,7 +48,7 @@ private:
 
     // Main secondary functions
     std::unique_ptr<ElectricPotential> m_electric_potential;
-    std::unique_ptr<HeatPower> m_heat_power_2;
+    //std::unique_ptr<HeatPower> m_heat_power_2;
 
     std::unique_ptr<SecondaryValue> m_M;
     std::unique_ptr<SecondaryValue> m_N_2;

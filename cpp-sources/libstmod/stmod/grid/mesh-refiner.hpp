@@ -11,14 +11,14 @@ class MeshRefiner
 public:
     MeshRefiner(FEGlobalResources& fe_global_res);
     void add_mesh_based(MeshBased* object);
-    void do_refine();
+    void do_refine(const dealii::Vector<double>& estimate_by);
     void call_on_mesh_refine();
 
 private:
     void pull_values();
     void push_values();
     void update_objects();
-    void estimate();
+    void estimate(const dealii::Vector<double>& estimate_by);
     void refine_and_transfer();
 
     FEGlobalResources& m_fe_global_res;

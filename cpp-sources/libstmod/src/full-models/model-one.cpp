@@ -4,7 +4,6 @@
 #include "stmod/field-output.hpp"
 #include "stmod/fractions/fraction.hpp"
 #include "stmod/fractions-physics/e.hpp"
-#include "stmod/fractions-physics/heat-power.hpp"
 #include "stmod/fractions-physics/electric-potential.hpp"
 #include "stmod/output/output.hpp"
 #include "stmod/time/time-iteration.hpp"
@@ -142,7 +141,12 @@ void ModelOne::init_fractions()
         [this](dealii::types::global_dof_index i, double)
         {
             double Td = (*m_Td)[i];
-            return Td < 50 ? 0.447 * pow(Td, 0.16) : 0.0167 * Td;
+            if (Td < 50)
+            {
+                return 0.447 * pow(Td, 0.16);
+            } else {
+                return 0.0167 * Td;
+            }
         }
     ));
 
@@ -205,9 +209,9 @@ void ModelOne::init_fractions()
             double td = (*m_Td)[i];
             if (td < 400)
             {
-                return pow(10, -14.1542-305.32/td+815.6/(pow(td, 2)));
+                return pow(10, -14.1542-305.32/td /*+815.6/(pow(td, 2))*/); // MODEL FAILS with this parts
             } else {
-                return pow(10, -13.4256-767.97/td+78082.8/(pow(td, 2)));
+                return pow(10, -13.4256-767.97/td /*+78082.8/(pow(td, 2))*/); // MODEL FAILS with this parts
             }
         }
     ), false);
@@ -274,9 +278,9 @@ void ModelOne::init_fractions()
             double td = (*m_Td)[i];
             if (td < 90)
             {
-                return -pow(10, -15.42-127/td);
+                return pow(10, -15.42-127/td);
             } else {
-                return -pow(10, -16.21-57/td);
+                return pow(10, -16.21-57/td);
             }
         }
     ), false);
@@ -359,7 +363,7 @@ void ModelOne::init_fractions()
             double T = (*m_T)[i];
             return 6e-34 * pow(300 / T, 2.0);
         }
-    ), false);
+    ), true);
 
     add_secondary(m_k_101, new SecondaryFunction("k101",
         [this](dealii::types::global_dof_index i, double)
@@ -416,9 +420,11 @@ void ModelOne::init_fractions()
     add_secondary(m_k_diss_eff, new SecondaryFunction("k_diss_eff",
         [this](dealii::types::global_dof_index i, double)
         {
-            return (4 * ((*m_k_1)[i] + (*m_k_2)[i] + (*m_k_3)[i] + (*m_k_4)[i] + (*m_k_5)[i]) + (*m_k_6)[i] + (*m_k_7)[i] + (*m_k_8)[i]);
+            double result = 4 * ((*m_k_1)[i] + (*m_k_2)[i] + (*m_k_3)[i] + (*m_k_4)[i] + (*m_k_5)[i]) + (*m_k_6)[i] + (*m_k_7)[i] + (*m_k_8)[i];
+            //double result = 4 * ((*m_k_1)[i] + (*m_k_2)[i] + (*m_k_3)[i] + (*m_k_4)[i] + (*m_k_5)[i]);
+            return result;
         }
-    ), false);
+    ), true);
 
     add_secondary(m_beta_ep, new SecondaryFunction("beta_ep",
         [this](dealii::types::global_dof_index i, double)
@@ -467,7 +473,8 @@ void ModelOne::init_fractions()
 
     // Equations
     // Ne
-    m_Ne->add_source(1.0, *m_k_6, *m_N_2, *m_Ne)
+    (*m_Ne)
+         .add_source(1.0, *m_k_6, *m_N_2, *m_Ne)
          .add_source(1.0, *m_k_7, *m_O_2, *m_Ne)
          .add_source(-1.0, *m_k_10, *m_O_2, *m_Ne)
          .add_source(-1.0, *m_k_11, *m_O_2, *m_O_2, *m_Ne)
@@ -475,9 +482,10 @@ void ModelOne::init_fractions()
          .add_source(1.0, *m_k_13, *m_N_2, *m_O_minus)
          .add_source(1.0, *m_k_14, *m_M, *m_O_2_minus)
          .add_source(1.0, *m_k_15, *m_O, *m_O_3_minus)
-         .add_source(-1.0, *m_beta_ep, *m_Ne, *m_N_p);
+         .add_source(-1.0, *m_beta_ep, *m_Ne, *m_N_p)
+    ;
 
-    double initial_Ne = 1e13;
+    double initial_Ne = 1e10;
 
     *m_Ne = initial_Ne;
     //assign_test_initial_values();
@@ -485,138 +493,171 @@ void ModelOne::init_fractions()
 
 
     // O_minus
-    m_O_minus->add_source(1.0, *m_k_10, *m_O_2, *m_Ne)
-              .add_source(-1.0, *m_k_13, *m_N_2, *m_O_minus)
-              .add_source(-1.0, *m_k_16, *m_O_2, *m_O_minus)
-              .add_source(-1.0, *m_k_17, *m_M, *m_O_2, *m_O_minus)
-              .add_source(1.0, *m_k_15, *m_O, *m_O_4_minus)
-              .add_source(-1.0, *m_beta_np, *m_O_minus, *m_N_p);
+    (*m_O_minus)
+        .add_source(1.0, *m_k_10, *m_O_2, *m_Ne)
+        .add_source(-1.0, *m_k_13, *m_N_2, *m_O_minus)
+        .add_source(-1.0, *m_k_16, *m_O_2, *m_O_minus)
+        .add_source(-1.0, *m_k_17, *m_M, *m_O_2, *m_O_minus)
+        .add_source(1.0, *m_k_15, *m_O, *m_O_4_minus)
+        .add_source(-1.0, *m_beta_np, *m_O_minus, *m_N_p)
+    ;
 
     *m_O_minus = 0.0;
 
     // O_2_minus
-    m_O_2_minus->add_source(1.0, *m_k_11, *m_O_2, *m_O_2, *m_Ne)
-                .add_source(1.0, *m_k_12, *m_O_2, *m_N_2, *m_Ne)
-                .add_source(1.0, *m_k_16, *m_O_2, *m_O_minus)
-                .add_source(-1.0, *m_k_14, *m_M, *m_O_2_minus)
-                .add_source(1.0, *m_k_18, *m_O, *m_O_3_minus)
-                .add_source(-1.0, *m_k_19, *m_O_2, *m_M, *m_O_2_minus)
-                .add_source(1.0, *m_k_20, *m_M, *m_O_4_minus)
-                .add_source(-1.0, *m_beta_np, *m_O_2_minus, *m_N_p);
+    (*m_O_2_minus)
+        .add_source(1.0, *m_k_11, *m_O_2, *m_O_2, *m_Ne)
+        .add_source(1.0, *m_k_12, *m_O_2, *m_N_2, *m_Ne)
+        .add_source(1.0, *m_k_16, *m_O_2, *m_O_minus)
+        .add_source(-1.0, *m_k_14, *m_M, *m_O_2_minus)
+        .add_source(1.0, *m_k_18, *m_O, *m_O_3_minus)
+        .add_source(-1.0, *m_k_19, *m_O_2, *m_M, *m_O_2_minus)
+        .add_source(1.0, *m_k_20, *m_M, *m_O_4_minus)
+        .add_source(-1.0, *m_beta_np, *m_O_2_minus, *m_N_p)
+    ;
 
     *m_O_2_minus = 0.0;
 
     // O_3_minus
-    m_O_3_minus->add_source(1.0, *m_k_17, *m_M, *m_O_2_minus, *m_O_minus)
-                .add_source(-1.0, *m_k_15, *m_O, *m_O_3_minus)
-                .add_source(-1.0, *m_k_18, *m_O, *m_O_3_minus)
-                .add_source(1.0, *m_k_21, *m_O, *m_O_4_minus)
-                .add_source(-1.0, *m_beta_np, *m_O_3_minus, *m_N_p);
+    (*m_O_3_minus)
+        .add_source(1.0, *m_k_17, *m_M, *m_O_2_minus, *m_O_minus)
+        .add_source(-1.0, *m_k_15, *m_O, *m_O_3_minus)
+        .add_source(-1.0, *m_k_18, *m_O, *m_O_3_minus)
+        .add_source(1.0, *m_k_21, *m_O, *m_O_4_minus)
+        .add_source(-1.0, *m_beta_np, *m_O_3_minus, *m_N_p)
+    ;
 
     *m_O_3_minus = 0.0;
 
     // O_4_minus
-    m_O_4_minus->add_source(1.0, *m_k_19, *m_O_2, *m_M, *m_O_2_minus)
-                .add_source(-1.0, *m_k_20, *m_M, *m_O_4_minus)
-                .add_source(-1.0, *m_k_21, *m_O, *m_O_4_minus)
-                .add_source(-1.0, *m_k_15, *m_O, *m_O_4_minus)
-                .add_source(-1.0, *m_beta_np, *m_O_4_minus, *m_N_p);
+    (*m_O_4_minus)
+        .add_source(1.0, *m_k_19, *m_O_2, *m_M, *m_O_2_minus)
+        .add_source(-1.0, *m_k_20, *m_M, *m_O_4_minus)
+        .add_source(-1.0, *m_k_21, *m_O, *m_O_4_minus)
+        .add_source(-1.0, *m_k_15, *m_O, *m_O_4_minus)
+        .add_source(-1.0, *m_beta_np, *m_O_4_minus, *m_N_p)
+    ;
 
     *m_O_4_minus = 0.0;
 
-    // N_p
-    m_N_p->add_source(1.0, *m_k_6, *m_N_2, *m_Ne)
-          .add_source(1.0, *m_k_7, *m_O_2, *m_Ne)
-          .add_source(-1.0, *m_beta_ep, *m_Ne, *m_N_p)
-          .add_source(-1.0, *m_beta_np, *m_O_minus, *m_N_p)
-          .add_source(-1.0, *m_beta_np, *m_O_2_minus, *m_N_p)
-          .add_source(-1.0, *m_beta_np, *m_O_3_minus, *m_N_p)
-          .add_source(-1.0, *m_beta_np, *m_O_4_minus, *m_N_p);
-
-    *m_N_p = initial_Ne;
-
+    // HERE
     // O
-    m_O->add_source(2.0, *m_k_diss_eff, *m_Ne, *m_O_2)
-        .add_source(-1.0, *m_k_100, *m_O, *m_O_2, *m_M);
+    (*m_O)
+       //.add_source(2.0, *m_k_diss_eff, *m_Ne, *m_O_2)
+       //.add_source(-1.0, *m_k_100, *m_O, *m_O_2, *m_M) // THIS is too fast, ~1e-16
+    ;
 
     *m_O = 0.0;
 
+    // O_3
+    (*m_O_3)
+        .add_source(6.2e-40, *m_O, *m_O_2, *m_M)
+    ;
+
+    *m_O_3 = 0.0;
+
+    // N_p
+    (*m_N_p)
+        .add_source(1.0, *m_k_6, *m_N_2, *m_Ne)
+        .add_source(1.0, *m_k_7, *m_O_2, *m_Ne)
+        .add_source(-1.0, *m_beta_ep, *m_Ne, *m_N_p)
+        .add_source(-1.0, *m_beta_np, *m_O_minus, *m_N_p)
+        .add_source(-1.0, *m_beta_np, *m_O_2_minus, *m_N_p)
+        .add_source(-1.0, *m_beta_np, *m_O_3_minus, *m_N_p)
+        .add_source(-1.0, *m_beta_np, *m_O_4_minus, *m_N_p)
+    ;
+
+    *m_N_p = initial_Ne;
+
     // u
-    m_u->add_source(1.0, *m_k_1, *m_Ne, *m_N_2)
+    (*m_u)
+        .add_source(1.0, *m_k_1, *m_Ne, *m_N_2)
         .add_source(2e-19, *m_N_2, *m_v)
         .add_source(-(1.7e-18 + 7.5e-19), *m_O_2, *m_u)
         .add_source(23.7e-17, *m_u, *m_u)
-        .add_source(3e-17, *m_u, *m_z);
+        .add_source(3e-17, *m_u, *m_z)
+    ;
 
     *m_u = 0.0;
 
     // v
-    m_v->add_source(1.0, *m_k_2, *m_Ne, *m_N_2)
+    (*m_v)
+        .add_source(1.0, *m_k_2, *m_Ne, *m_N_2)
         .add_source(7.7e-17, *m_u, *m_u)
         .add_source(2e-19, *m_N_2, *m_w)
         .add_source(1e-17, *m_N_2, *m_x)
         .add_source(2.4e7, *m_x)
         .add_source(-3e-16, *m_O_2, *m_v)
-        .add_source(-2e-19, *m_N_2, *m_v);
+        .add_source(-2e-19, *m_N_2, *m_v)
+    ;
 
     *m_v = 0.0;
 
     // w
-    m_w->add_source(1.0, *m_k_3, *m_Ne, *m_N_2)
+    (*m_w)
+        .add_source(1.0, *m_k_3, *m_Ne, *m_N_2)
         .add_source(-2.8e-17, *m_O_2, *m_w)
-        .add_source(-2e-19, *m_N_2, *m_w);
+        .add_source(-2e-19, *m_N_2, *m_w)
+    ;
 
     *m_w = 0.0;
 
     // x
-    m_x->add_source(1.0, *m_k_4, *m_Ne, *m_N_2)
+    (*m_x)
+        .add_source(1.0, *m_k_4, *m_Ne, *m_N_2)
         .add_source(1.6e-16, *m_u, *m_u)
         .add_source(-2.5e-16, *m_O_2, *m_x)
         .add_source(-1e-17, *m_N_2, *m_x)
-        .add_source(-2.4e7, *m_x);
+        .add_source(-2.4e7, *m_x)
+    ;
 
     *m_x = 0.0;
 
     // y
-    m_y->add_source(1.0, *m_k_9, *m_Ne, *m_O_2)
+    (*m_y)
+        .add_source(1.0, *m_k_9, *m_Ne, *m_O_2)
         .add_source(2.8e-17, *m_O_2, *m_w)
         .add_source(-1.0, *m_k_101, *m_N_2, *m_y)
-        .add_source(-1.0, *m_k_102, *m_O_2, *m_y);
+        .add_source(-1.0, *m_k_102, *m_O_2, *m_y)
+    ;
 
     *m_y = 0.0;
 
     // z
-    m_z->add_source(1.0, *m_k_103, *m_Ne, *m_O_2)
+    (*m_z)
+        .add_source(1.0, *m_k_103, *m_Ne, *m_O_2)
         .add_source(1.0, *m_k_101, *m_N_2, *m_y)
         .add_source(1.0, *m_k_102, *m_O_2, *m_y)
         .add_source(3.4e-18, *m_O_2, *m_u)
         .add_source(6e-16, *m_O_2, *m_v)
         .add_source(2.8e-17, *m_O_2, *m_w)
-        .add_source(3e-17, *m_u, *m_z);
+        .add_source(3e-17, *m_u, *m_z)
+    ;
 
     *m_z = 0.0;
 
     // W_v
-    m_W_v->add_source(1.0, *m_f_v, *m_heat_power)
-          .add_source(-1.0, *m_Q);
+    (*m_W_v)
+        .add_source(1.0, *m_f_v, *m_heat_power)
+        .add_source(-1.0, *m_Q)
+    ;
 
     double initial_T = 300;
     *m_W_v = secondary_L(initial_T, secondary_M(initial_T));
 
-    // O_3
-    m_O_3->add_source(6.2e-40, *m_O, *m_O_2, *m_M);
 
-    *m_O_3 = 0.0;
 
     // m_T
-    m_T->add_source(1.0, *m_k_105, *m_heat_power)
+    (*m_T)
+        .add_source(1.0, *m_k_105, *m_heat_power)
         .add_source(1.0, *m_k_104, *m_Q)
         .add_source(1.7e-18, *m_k_106, *m_u, *m_O_2)
         .add_source(3.08e-16, *m_k_106, *m_u, *m_u)
         .add_source(7.05e-16, *m_k_106, *m_v, *m_O_2)
         .add_source(3.92e-17, *m_k_106, *m_w, *m_O_2)
         .add_source(1.2075e-15, *m_k_106, *m_x, *m_O_2)
-        .add_source(1.0, *m_k_106, *m_k_107, *m_y, *m_N_2);
+        .add_source(1.0, *m_k_106, *m_k_107, *m_y, *m_N_2)
+    ;
 
     *m_T = initial_T;
 
@@ -649,31 +690,36 @@ void ModelOne::assign_test_initial_values()
 
 void ModelOne::run()
 {
-    m_electric_potential->compute(0.0);
-    //m_electrons->solve();
-
     StmodTimeStepper stepper;
     stepper.init();
 
-    m_output_maker.output(m_global_resources->dof_handler(), "frac-out-iter-" + std::to_string(0) + ".vtu");
-    m_refiner->do_refine();
-    m_refiner->do_refine();
+    //m_output_maker.output(m_global_resources->dof_handler(), "frac-out-iter-" + std::to_string(0) + ".vtu");
+    //m_refiner->do_refine();
+    //m_refiner->do_refine();
     //boundary_assigner.assign_boundary_ids();
+    //m_electric_potential->compute(0.0);
+
+    std::cout << "   Computing electric potential and performing first 'Dry' output" << std::endl;
     m_electric_potential->compute(0.0);
-    m_electric_potential->compute(0.0);
-    m_output_maker.output(m_global_resources->dof_handler(), "frac-out-iter-" + std::to_string(1) + ".vtu");
+
+    const auto fname = make_output_filename(0);
+    std::cout << "Writing " << fname << std::endl;
+    m_output_maker.output(m_global_resources->dof_handler(), fname);
 
     //return 0.0;
 
     double t = 0;
     double dt = 1e-12;
     double last_output_t = t;
-    for (int i = 0; i < 100000; i++)
+
+    for(int i = 0; !m_interrupt; i++)
     {
         /*m_electrons->compute(0.0);
         m_electrons->value_w().add(0.00000005, m_electrons->derivative());
         */
-        t = stepper.iterate(*m_variables_collector, t, dt);
+        double t_new = stepper.iterate(*m_variables_collector, t, dt);
+        dt = t_new - t;
+        t = t_new;
 /*
         m_boundary_assigner->assign_boundary_ids();
         m_electric_potential->compute(0.0);
@@ -690,16 +736,28 @@ void ModelOne::run()
         t = t_new;
         std::cout << "dt = " << dt << std::endl;
 */
-        //if (t - last_output_t >= 1e-8)
+        //if (t - last_output_t >= 5e-10 || i == 0)
         {
-            std::string filename = "frac-out-iter-" + std::to_string(i+2) + ".vtu";
-            std::cout << "Writing " << filename << std::endl;
-            m_output_maker.output(m_global_resources->dof_handler(), filename);
+            const auto fname = make_output_filename(t);
+            std::cout << "Writing " << fname << std::endl;
+            m_output_maker.output(m_global_resources->dof_handler(), fname);
             last_output_t = t;
         }
-        if (i % 10 == 0)
-            m_refiner->do_refine();
+        if (i % 3 == 0)
+            m_refiner->do_refine(m_Ne->values());
     }
+}
+
+void ModelOne::interrupt()
+{
+    m_interrupt = true;
+}
+
+std::string ModelOne::make_output_filename(double t)
+{
+    std::ostringstream filename;
+    filename << "frac-out-iter-" << std::setw(15) << std::setfill('0') << size_t(t * 1e15) << ".vtu";
+    return filename.str();
 }
 
 void ModelOne::add_secondary(std::unique_ptr<SecondaryValue>& uniq_ptr, SecondaryValue* value, bool need_output)
@@ -726,5 +784,5 @@ double ModelOne::secondary_L(double T, double M)
 
 double ModelOne::secondary_M(double T)
 {
-    return 2.7e25 * (((1))) / 760 * 273 / T;
+    return 2.7e25 * (((760))) / 760 * 273 / T;
 }

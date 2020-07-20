@@ -9,16 +9,6 @@
 
 using namespace dealii;
 
-void remove_negative(dealii::Vector<double>& values)
-{
-    for (dealii::Vector<double>::size_type i = 0; i < values.size(); i++)
-    {
-        if (values[i] < 0.0)
-            values[i] = 0.0;
-    }
-}
-
-
 FEGlobalResources::FEGlobalResources(dealii::Triangulation<2>& triangulation, unsigned int degree) :
     m_triangulation(triangulation), m_fe(degree), m_dof_handler(m_triangulation)
 {

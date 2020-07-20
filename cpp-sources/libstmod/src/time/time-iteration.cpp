@@ -1,5 +1,6 @@
 #include "stmod/time/time-iteration.hpp"
 #include <deal.II/lac/affine_constraints.h>
+#include <deal.II/base/numbers.h>
 
 #include <stdexcept>
 
@@ -85,7 +86,7 @@ void VariablesCollector::pull_derivatives()
     }
 }
 
-void VariablesCollector::compute(double t)
+void VariablesCollector::compute_in_places(double t)
 {
     //std::cout << "VariablesCollector::compute for t = " << t << std::endl;
 
@@ -117,12 +118,38 @@ void VariablesCollector::implicit_deltas_add()
     }
 }
 
-const dealii::Vector<double>& VariablesCollector::compute_derivatives(double t, const Vector<double> &y)
+const dealii::Vector<double>& VariablesCollector::compute_derivatives(double t, const Vector<double> &y, double limiting_dt)
 {
     push_values(y);
-    compute(t);
+    compute_in_places(t);
     pull_derivatives();
+    //limit_derivatives(limiting_dt, y, m_derivatives);
     return all_derivatives();
+}
+
+void VariablesCollector::limit_derivatives(double dt, const dealii::Vector<double>& y, dealii::Vector<double>& derivatives)
+{
+    size_t count = 0;
+    for (dealii::Vector<double>::size_type i = 0; i < y.size(); i++)
+    {
+        if (y[i] >= 0 && derivatives[i] < 0)
+        {
+            derivatives[i] = std::max(derivatives[i], -y[i] / dt);
+            count++;
+        }
+    }
+    std::cout << "Limiting applied to " << count << " of " << y.size() << " derivetives";
+}
+
+void VariablesCollector::assert_finite()
+{
+    for (dealii::Vector<double>::size_type i = 0; i < m_derivatives.size(); i++)
+    {
+        if ( !dealii::numbers::is_finite(m_derivatives[i]) )
+        {
+            // @todo
+        }
+    }
 }
 
 dealii::Vector<double>::size_type VariablesCollector::get_total_size()
@@ -155,15 +182,15 @@ StmodTimeStepper::StmodTimeStepper()
 
 void StmodTimeStepper::init()
 {
-    //m_stepper = std::make_shared<TimeStepping::ExplicitRungeKutta<Vector<double>>>(TimeStepping::FORWARD_EULER);
-    m_stepper = std::make_shared<TimeStepping::ExplicitRungeKutta<Vector<double>>>(TimeStepping::RK_CLASSIC_FOURTH_ORDER);
+    m_stepper = std::make_shared<TimeStepping::ExplicitRungeKutta<Vector<double>>>(TimeStepping::FORWARD_EULER);
+    //m_stepper = std::make_shared<TimeStepping::ExplicitRungeKutta<Vector<double>>>(TimeStepping::RK_CLASSIC_FOURTH_ORDER);
 
 
 
     const double coarsen_param = 1.2;
     const double refine_param  = 0.8;
-    const double min_delta     = 1e-11;
-    const double max_delta     = 1e-7;
+    const double min_delta     = 1e-13;
+    const double max_delta     = 1e-9;
 
     /*const double refine_tol    = 1e-5;
     const double coarsen_tol   = 1e-7;*/
@@ -172,6 +199,7 @@ void StmodTimeStepper::init()
     const double coarsen_tol   = 1e-4;
 
     m_embedded_stepper = std::make_shared<TimeStepping::EmbeddedExplicitRungeKutta<Vector<double>>>(
+        //TimeStepping::FORWARD_EULER,
         TimeStepping::BOGACKI_SHAMPINE,
         coarsen_param,
         refine_param,
@@ -187,16 +215,13 @@ double StmodTimeStepper::iterate(VariablesCollector& collector, double t, double
 {
     std::cout << "=> Time step on t = " << t << std::endl;
     collector.resize();
+
     // Reading values to single array
     collector.pull_values_to_storage();
 
     // Saving this array
     m_on_explicit_begin = collector.stored_values();
-/*
-    // Trivial Euler variant
-    collector.compute(t);
-    collector.pull_derivatives();
-    collector.all_values().add(0.00000005, collector.all_derivatives());*/
+
     double resulting_t = t;
 
     std::cout << "   Substeps: " << std::flush;
@@ -204,17 +229,18 @@ double StmodTimeStepper::iterate(VariablesCollector& collector, double t, double
     if (collector.stored_values().size() != 0)
     {
         resulting_t = m_embedded_stepper->evolve_one_time_step(
-            [&collector](const double time, const Vector<double> &y)
+        //resulting_t = m_stepper->evolve_one_time_step(
+            [&collector, dt](const double time, const Vector<double> &y)
             {
                 std::cout << "t = " << time << " | " << std::flush;
-                return collector.compute_derivatives(time, y);
+                return collector.compute_derivatives(time, y, dt / 2);
             },
             t, dt, collector.stored_values()
         );
 
     } else {
         // @todo check this branch
-        collector.compute(t);
+        collector.compute_in_places(t);
         resulting_t += dt;
     }
 
@@ -222,6 +248,7 @@ double StmodTimeStepper::iterate(VariablesCollector& collector, double t, double
 
     // Saving explicit time step results
     m_on_explicit_end = collector.stored_values();
+    remove_negative(m_on_explicit_end);
 
     // Restoring old values to compute implicit part
     collector.push_values(m_on_explicit_begin);
@@ -239,3 +266,16 @@ double StmodTimeStepper::iterate(VariablesCollector& collector, double t, double
     return resulting_t;
 }
 
+void StmodTimeStepper::remove_negative(dealii::Vector<double>& values)
+{
+    size_t removed = 0;
+    for (dealii::Vector<double>::size_type i = 0; i < values.size(); i++)
+    {
+        if (values[i] < 0.0)
+        {
+            values[i] = 0.0;
+            removed++;
+        }
+    }
+    std::cout << "Removed " << removed << " negative values of total " << values.size();
+}

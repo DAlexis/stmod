@@ -29,6 +29,7 @@ Fraction& Fraction::add_source(double coeff, const dealii::Vector<double>& s1, c
     Source s;
     s.coeff = coeff;
     s.sources = {&s1, &s2, &s3};
+    m_sources.push_back(s);
     return *this;
 }
 
@@ -37,6 +38,7 @@ Fraction& Fraction::add_source(double coeff, const dealii::Vector<double>& s1, c
     Source s;
     s.coeff = coeff;
     s.sources = {&s1, &s2, &s3, &s4};
+    m_sources.push_back(s);
     return *this;
 }
 

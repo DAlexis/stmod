@@ -17,10 +17,10 @@ void MeshRefiner::add_mesh_based(MeshBased* object)
     m_objects.push_back(object);
 }
 
-void MeshRefiner::do_refine()
+void MeshRefiner::do_refine(const dealii::Vector<double>& estimate_by)
 {
     pull_values();
-    estimate();
+    estimate(estimate_by);
     refine_and_transfer();
     update_objects();
     push_values();
@@ -45,6 +45,8 @@ void MeshRefiner::push_values()
 {
     for (size_t i = 0; i < m_objects.size(); i++)
     {
+        if (m_objects[i]->values_w().size() != m_solutions_transferred[i].size())
+            throw std::range_error("transferred solution and target vector size missmatch!");
         m_objects[i]->values_w() = m_solutions_transferred[i];
     }
 }
@@ -57,40 +59,37 @@ void MeshRefiner::update_objects()
     }
 }
 
-void MeshRefiner::estimate()
+void MeshRefiner::estimate(const dealii::Vector<double>& estimate_by)
 {
     const unsigned int max_grid_level = 2;
-    for (auto &object : m_objects)
+
+    Vector<float> estimated_error_per_cell(m_fe_global_res.triangulation().n_active_cells());
+
+    KellyErrorEstimator<2>::estimate(
+        m_fe_global_res.dof_handler(),
+        QGauss<2 - 1>(m_fe_global_res.dof_handler().get_fe().degree + 1),
+        std::map<types::boundary_id, const Function<2> *>(),
+        estimate_by,
+        estimated_error_per_cell
+    );
+
+    GridRefinement::refine_and_coarsen_fixed_fraction(m_fe_global_res.triangulation(),
+                                                      estimated_error_per_cell,
+                                                      0.6,
+                                                      0.4, 150000);
+
+    if (m_fe_global_res.triangulation().n_levels() > max_grid_level)
     {
-        Vector<float> estimated_error_per_cell(m_fe_global_res.triangulation().n_active_cells());
-
-        KellyErrorEstimator<2>::estimate(
-            m_fe_global_res.dof_handler(),
-            QGauss<2 - 1>(m_fe_global_res.dof_handler().get_fe().degree + 1),
-            std::map<types::boundary_id, const Function<2> *>(),
-            object->values(),
-            estimated_error_per_cell
-        );
-
-        GridRefinement::refine_and_coarsen_fixed_fraction(m_fe_global_res.triangulation(),
-                                                          estimated_error_per_cell,
-                                                          0.6,
-                                                          0.4, 150000);
-
-        if (m_fe_global_res.triangulation().n_levels() > max_grid_level)
+        for (const auto &cell : m_fe_global_res.triangulation().active_cell_iterators_on_level(max_grid_level))
         {
-            for (const auto &cell : m_fe_global_res.triangulation().active_cell_iterators_on_level(max_grid_level))
-            {
-                cell->clear_refine_flag();
-            }
+            cell->clear_refine_flag();
         }
-        break;
-        /*
-        for (const auto &cell : triangulation.active_cell_iterators_on_level(min_grid_level))
-        {
-            cell->clear_coarsen_flag();
-        }*/
     }
+    /*
+    for (const auto &cell : triangulation.active_cell_iterators_on_level(min_grid_level))
+    {
+        cell->clear_coarsen_flag();
+    }*/
 }
 
 void MeshRefiner::refine_and_transfer()
