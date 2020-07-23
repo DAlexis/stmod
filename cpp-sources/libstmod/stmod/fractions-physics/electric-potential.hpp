@@ -32,6 +32,8 @@ public:
 
     const std::vector<dealii::Tensor<1, 2>>& E_vector();
     const dealii::Vector<double>& E_scalar();
+    const dealii::Vector<double>& E_x();
+    const dealii::Vector<double>& E_y();
 
     const std::string& output_name(size_t index) const override;
     const dealii::Vector<double>& output_value(size_t index) const override;

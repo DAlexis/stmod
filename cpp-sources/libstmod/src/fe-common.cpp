@@ -64,6 +64,8 @@ void FEGlobalResources::on_triangulation_updated()
 {
     m_cleaner.clear();
     m_dof_handler.distribute_dofs(m_fe);
+
+    std::cout << "Creating hanging node constrants" << std::endl;
     m_constraints.clear();
         // No boundary values inside constraints
         DoFTools::make_hanging_node_constraints(m_dof_handler, m_constraints);

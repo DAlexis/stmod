@@ -48,7 +48,7 @@ public:
 
     dealii::Vector<double>& value_w();
 
-    void set_potential(const dealii::Vector<double>& potential);
+    void set_electric_field(const dealii::Vector<double>& Ex, const dealii::Vector<double>& Ey);
 
     const dealii::Vector<double>& get_implicit_delta(double dt, double theta = 0.5);
 
@@ -74,7 +74,8 @@ private:
     dealii::SparseDirectUMFPACK m_implicit_system_reversed;
     dealii::Vector<double> m_implicit_delta;
 
-    const dealii::Vector<double>* m_potential = nullptr;
+    const dealii::Vector<double>* m_Ex = nullptr;
+    const dealii::Vector<double>* m_Ey = nullptr;
 
     std::map<dealii::types::global_dof_index, double> m_boundary_values;
 

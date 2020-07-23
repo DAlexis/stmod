@@ -41,13 +41,25 @@ void MeshRefiner::pull_values()
     }
 }
 
+static bool is_zero(dealii::Vector<double> vec)
+{
+    for (unsigned int i = 0; i < vec.size(); i++)
+    {
+        if (vec[i] != 0.0)
+            return false;
+    }
+    return true;
+}
+
 void MeshRefiner::push_values()
 {
     for (size_t i = 0; i < m_objects.size(); i++)
     {
         if (m_objects[i]->values_w().size() != m_solutions_transferred[i].size())
             throw std::range_error("transferred solution and target vector size missmatch!");
+
         m_objects[i]->values_w() = m_solutions_transferred[i];
+
     }
 }
 
@@ -94,6 +106,8 @@ void MeshRefiner::estimate(const dealii::Vector<double>& estimate_by)
 
 void MeshRefiner::refine_and_transfer()
 {
+    //std::cout << "Refine and transfer..." << std::endl;
+    const auto old_ndofs = m_fe_global_res.n_dofs();
     SolutionTransfer<2> soltution_transfer(m_fe_global_res.dof_handler());
 
     // prepare the triangulation,
@@ -110,7 +124,7 @@ void MeshRefiner::refine_and_transfer()
     m_fe_global_res.on_triangulation_updated();
 
     const unsigned int new_n_dofs = m_fe_global_res.dof_handler().n_dofs();
-
+    //std::cout << "Grid modification: from " << old_ndofs << " to " << new_n_dofs << " dofs" << std::endl;
     m_solutions_transferred.clear();
     m_solutions_transferred.resize(m_solutions_to_transfer.size());
     for (auto &it : m_solutions_transferred)
@@ -120,5 +134,9 @@ void MeshRefiner::refine_and_transfer()
 
     // and interpolate the solution
     soltution_transfer.interpolate(m_solutions_to_transfer, m_solutions_transferred);
+    for (size_t i = 0; i < m_solutions_transferred.size(); i++)
+    {
+        m_fe_global_res.constraints().distribute(m_solutions_transferred[i]);
+    }
 
 }

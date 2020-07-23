@@ -670,7 +670,7 @@ void ModelOne::init_fractions()
     m_electric_potential->add_charge(m_O_4_minus->values(), -Consts::e);
     m_electric_potential->add_charge(m_N_p->values(), Consts::e);
 
-    m_Ne->set_potential(m_electric_potential->values());
+    m_Ne->set_electric_field(m_electric_potential->E_x(), m_electric_potential->E_y());
 
     m_variables_collector->add_implicit_steppable(m_Ne.get());
     std::cout << "   All fractions setup done" << std::endl;
@@ -691,7 +691,6 @@ void ModelOne::assign_test_initial_values()
 void ModelOne::run()
 {
     StmodTimeStepper stepper;
-    stepper.init();
 
     //m_output_maker.output(m_global_resources->dof_handler(), "frac-out-iter-" + std::to_string(0) + ".vtu");
     //m_refiner->do_refine();
@@ -709,7 +708,7 @@ void ModelOne::run()
     //return 0.0;
 
     double t = 0;
-    double dt = 1e-12;
+    double dt = 1e-13;
     double last_output_t = t;
 
     for(int i = 0; !m_interrupt; i++)
@@ -736,15 +735,15 @@ void ModelOne::run()
         t = t_new;
         std::cout << "dt = " << dt << std::endl;
 */
-        //if (t - last_output_t >= 5e-10 || i == 0)
+        if (t - last_output_t >= 5e-12 || i == 0)
         {
             const auto fname = make_output_filename(t);
             std::cout << "Writing " << fname << std::endl;
             m_output_maker.output(m_global_resources->dof_handler(), fname);
             last_output_t = t;
         }
-        if (i % 3 == 0)
-            m_refiner->do_refine(m_Ne->values());
+        /*if (i % 15 == 0)
+            m_refiner->do_refine(m_Ne->values());*/
     }
 }
 

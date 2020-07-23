@@ -32,9 +32,10 @@ dealii::Vector<double>& Electrons::value_w()
     return m_concentration;
 }
 
-void Electrons::set_potential(const dealii::Vector<double>& potential)
+void Electrons::set_electric_field(const dealii::Vector<double>& Ex, const dealii::Vector<double>& Ey)
 {
-    m_potential = &potential;
+    m_Ex = &Ex;
+    m_Ey = &Ey;
 }
 
 const dealii::Vector<double>& Electrons::get_implicit_delta(double dt, double theta)
@@ -44,9 +45,10 @@ const dealii::Vector<double>& Electrons::get_implicit_delta(double dt, double th
 
     m_tmp_matrix = 0;
     //m_fe_global_res.grad_phi_i_grad_phi_j_dot_r_phi_k().sum_with_tensor(m_tmp_matrix, *m_potential);
-    create_E_grad_psi_psi_matrix_axial(
+    create_E_psi_grad_psi_matrix_axial(
             //10/0.002, 10/0.002,
-            *m_potential,
+            *m_Ex,
+            *m_Ey,
             m_fe_global_res.dof_handler(),
             m_tmp_matrix);
 

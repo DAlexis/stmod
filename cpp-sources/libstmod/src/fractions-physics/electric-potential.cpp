@@ -113,6 +113,16 @@ const dealii::Vector<double>& ElectricPotential::E_scalar()
     return m_E_scalar;
 }
 
+const dealii::Vector<double>& ElectricPotential::E_x()
+{
+    return m_E_x;
+}
+
+const dealii::Vector<double>& ElectricPotential::E_y()
+{
+    return m_E_y;
+}
+
 
 void ElectricPotential::calc_total_charge()
 {

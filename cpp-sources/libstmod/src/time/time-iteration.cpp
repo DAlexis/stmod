@@ -213,6 +213,7 @@ void StmodTimeStepper::init()
 
 double StmodTimeStepper::iterate(VariablesCollector& collector, double t, double dt)
 {
+    init();
     std::cout << "=> Time step on t = " << t << std::endl;
     collector.resize();
 
@@ -262,6 +263,11 @@ double StmodTimeStepper::iterate(VariablesCollector& collector, double t, double
     collector.push_values(m_on_explicit_end);
     // and adding deltas from implicit
     collector.implicit_deltas_add();
+
+    collector.pull_values_to_storage();
+    remove_negative(collector.stored_values());
+    collector.push_values(collector.stored_values());
+
     std::cout << "   done, t changed from " << t << " to " << resulting_t << " with dt = " << actual_dt << "." << std::endl;
     return resulting_t;
 }
