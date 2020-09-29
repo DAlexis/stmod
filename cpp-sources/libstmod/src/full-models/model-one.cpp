@@ -209,9 +209,9 @@ void ModelOne::init_fractions()
             double td = (*m_Td)[i];
             if (td < 400)
             {
-                return pow(10, -14.1542-305.32/td /*+815.6/(pow(td, 2))*/); // MODEL FAILS with this parts
+                return pow(10, -14.1542-305.32/td /*+ 815.6/(pow(td, 2))*/); // MODEL FAILS with this parts
             } else {
-                return pow(10, -13.4256-767.97/td /*+78082.8/(pow(td, 2))*/); // MODEL FAILS with this parts
+                return pow(10, -13.4256-767.97/td /*+ 78082.8/(pow(td, 2))*/); // MODEL FAILS with this parts
             }
         }
     ), false);
@@ -361,7 +361,7 @@ void ModelOne::init_fractions()
         [this](dealii::types::global_dof_index i, double)
         {
             double T = (*m_T)[i];
-            return 6e-34 * pow(300 / T, 2.0);
+            return 6e-46 * pow(300 / T, 2.0);
         }
     ), true);
 
@@ -420,7 +420,7 @@ void ModelOne::init_fractions()
     add_secondary(m_k_diss_eff, new SecondaryFunction("k_diss_eff",
         [this](dealii::types::global_dof_index i, double)
         {
-            double result = 4 * ((*m_k_1)[i] + (*m_k_2)[i] + (*m_k_3)[i] + (*m_k_4)[i] + (*m_k_5)[i]) + (*m_k_6)[i] + (*m_k_7)[i] + (*m_k_8)[i];
+            double result = 4 * ((*m_k_1)[i] + (*m_k_2)[i] + (*m_k_3)[i] + (*m_k_4)[i]) + (*m_k_6)[i] + (*m_k_7)[i] + (*m_k_8)[i];
             //double result = 4 * ((*m_k_1)[i] + (*m_k_2)[i] + (*m_k_3)[i] + (*m_k_4)[i] + (*m_k_5)[i]);
             return result;
         }
@@ -483,9 +483,10 @@ void ModelOne::init_fractions()
          .add_source(1.0, *m_k_14, *m_M, *m_O_2_minus)
          .add_source(1.0, *m_k_15, *m_O, *m_O_3_minus)
          .add_source(-1.0, *m_beta_ep, *m_Ne, *m_N_p)
+         .add_source(2.0e-18, *m_O_2) // cosmic rays ionization - ???
     ;
 
-    double initial_Ne = 1e10;
+    double initial_Ne = 0.0;//1e10;
 
     *m_Ne = initial_Ne;
     //assign_test_initial_values();
@@ -543,8 +544,8 @@ void ModelOne::init_fractions()
     // HERE
     // O
     (*m_O)
-       //.add_source(2.0, *m_k_diss_eff, *m_Ne, *m_O_2)
-       //.add_source(-1.0, *m_k_100, *m_O, *m_O_2, *m_M) // THIS is too fast, ~1e-16
+       .add_source(2.0, *m_k_diss_eff, *m_Ne, *m_O_2)
+       .add_source(-1.0, *m_k_100, *m_O, *m_O_2, *m_M) // THIS is too fast, ~1e-16
     ;
 
     *m_O = 0.0;
@@ -565,6 +566,7 @@ void ModelOne::init_fractions()
         .add_source(-1.0, *m_beta_np, *m_O_2_minus, *m_N_p)
         .add_source(-1.0, *m_beta_np, *m_O_3_minus, *m_N_p)
         .add_source(-1.0, *m_beta_np, *m_O_4_minus, *m_N_p)
+        .add_source(2.0e-18, *m_O_2) // cosmic rays ionization - ???
     ;
 
     *m_N_p = initial_Ne;
@@ -670,7 +672,7 @@ void ModelOne::init_fractions()
     m_electric_potential->add_charge(m_O_4_minus->values(), -Consts::e);
     m_electric_potential->add_charge(m_N_p->values(), Consts::e);
 
-    m_Ne->set_electric_field(m_electric_potential->E_x(), m_electric_potential->E_y());
+    m_Ne->set_electric_field(m_electric_potential->E_x(), m_electric_potential->E_y(), m_electric_potential->total_chagre());
 
     m_variables_collector->add_implicit_steppable(m_Ne.get());
     std::cout << "   All fractions setup done" << std::endl;
@@ -680,7 +682,7 @@ void ModelOne::assign_test_initial_values()
 {
     FieldAssigner fa(m_global_resources->dof_handler());
     fa.assign_fiend(
-        m_Ne->value_w(),
+        m_Ne->values_w(),
         [](const dealii::Point<2>& point) -> double
         {
             return 1e13*exp(- (pow((point[0]) / 0.002, 2.0) + pow((point[1] - 0.012 ) / 0.005, 2.0)));
@@ -708,7 +710,7 @@ void ModelOne::run()
     //return 0.0;
 
     double t = 0;
-    double dt = 1e-13;
+    double dt = 1e-11;
     double last_output_t = t;
 
     for(int i = 0; !m_interrupt; i++)
@@ -716,7 +718,9 @@ void ModelOne::run()
         /*m_electrons->compute(0.0);
         m_electrons->value_w().add(0.00000005, m_electrons->derivative());
         */
+        std::cout << "# Number of dofs: " << m_global_resources->n_dofs() << std::endl;
         double t_new = stepper.iterate(*m_variables_collector, t, dt);
+        m_refiner->do_refine(m_Ne->values());
         dt = t_new - t;
         t = t_new;
 /*
@@ -735,13 +739,14 @@ void ModelOne::run()
         t = t_new;
         std::cout << "dt = " << dt << std::endl;
 */
-        if (t - last_output_t >= 5e-12 || i == 0)
+//        if (t - last_output_t >= 1e-10 || i == 0)
         {
             const auto fname = make_output_filename(t);
             std::cout << "Writing " << fname << std::endl;
             m_output_maker.output(m_global_resources->dof_handler(), fname);
             last_output_t = t;
         }
+
         /*if (i % 15 == 0)
             m_refiner->do_refine(m_Ne->values());*/
     }

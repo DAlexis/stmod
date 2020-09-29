@@ -14,8 +14,10 @@
 
 using namespace dealii;
 
+const std::string ElectricPotential::m_name = "Electric_potential";
+
 ElectricPotential::ElectricPotential(const FEGlobalResources& fe_res) :
-    SecondaryValue("Potential"), m_fe_global_res(fe_res), m_electric_field_sampler(m_fe_global_res.dof_handler())
+    Variable(m_name), m_fe_global_res(fe_res), m_electric_field_sampler(m_fe_global_res.dof_handler())
 {
     //m_fe_res.set_boundary_cond_gen([this](auto & constraints) { add_boundary_conditions(constraints); });
 }

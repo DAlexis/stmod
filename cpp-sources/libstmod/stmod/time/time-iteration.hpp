@@ -16,7 +16,7 @@ public:
     VariablesCollector(const dealii::AffineConstraints<double>& constraints);
     void add_derivatives_provider(VariableWithDerivative* steppable);
     void add_pre_step_computator(IPreStepComputer* pre_step);
-    void add_implicit_steppable(IImplicitSteppable* implicit_steppable);
+    void add_implicit_steppable(ImplicitSteppable* implicit_steppable);
 
     dealii::Vector<double>& stored_values();
     const dealii::Vector<double>& all_derivatives() const;
@@ -40,7 +40,6 @@ public:
     void implicit_deltas_collect(double t, double dt, double theta = 0.5);
     void implicit_deltas_add();
 
-
     /**
      * @brief Push specified values, compute and pull derivatives into internal storage
      * @param t - time
@@ -49,6 +48,7 @@ public:
      */
     const dealii::Vector<double>& compute_derivatives(double t, const dealii::Vector<double> &y, double limiting_dt);
 
+    const VariableWithDerivative* variable_by_global_index(size_t index);
 private:
     static void limit_derivatives(double dt, const dealii::Vector<double>& y, dealii::Vector<double>& derivatives);
     void assert_finite(); /// @todo Function not ready!
@@ -57,9 +57,9 @@ private:
 
     dealii::Vector<double>::size_type get_total_size();
 
-    std::vector<VariableWithDerivative*> m_steppables;
+    std::vector<VariableWithDerivative*> m_variables;
     std::vector<IPreStepComputer*> m_pre_step_jobs;
-    std::vector<IImplicitSteppable*> m_implicit_steppables;
+    std::vector<ImplicitSteppable*> m_implicit_steppables;
     std::vector<const dealii::Vector<double>*> m_implicit_deltas;
 
     dealii::Vector<double> m_values;
@@ -73,6 +73,15 @@ private:
             );
 };
 
+class SimpleTimeStepEstimator
+{
+public:
+    void min_x_over_dot_x(const dealii::Vector<double>& x, const dealii::Vector<double>& dot_x);
+
+    double fastest_time = 0.0;
+    size_t fastest_index = 0;
+};
+
 class StmodTimeStepper
 {
 public:
@@ -83,6 +92,9 @@ public:
 
 private:
     static void remove_negative(dealii::Vector<double>& values);
+
+    SimpleTimeStepEstimator m_estimator;
+
     std::shared_ptr<dealii::TimeStepping::ExplicitRungeKutta<dealii::Vector<double>>> m_stepper;
     std::shared_ptr<dealii::TimeStepping::EmbeddedExplicitRungeKutta<dealii::Vector<double>>> m_embedded_stepper;
 

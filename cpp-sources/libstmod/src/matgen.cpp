@@ -138,8 +138,6 @@ void create_E_psi_grad_psi_matrix_axial(
     FullMatrix<double> cell_matrix(dofs_per_cell, dofs_per_cell);
     std::vector<types::global_dof_index> local_dof_indices(dofs_per_cell);
 
-    Tensor<1, 2> this_point_potential_gradient;
-
     for (const auto &cell : dof_handler.active_cell_iterators())
     {
         cell_matrix = 0;
@@ -149,6 +147,19 @@ void create_E_psi_grad_psi_matrix_axial(
         {
             const auto x_q = fe_values.quadrature_point(q_index);
             const double r = x_q[0];
+
+            // First calculating total E field in current quadrature point
+            double Ex_total = 0;
+            double Ey_total = 0;
+
+            for (unsigned int k = 0; k < dofs_per_cell; ++k) // Iterating over components of Ex, Ey in this cell
+            {
+                auto psi_k = fe_values.shape_value(k, q_index);
+                Ex_total += Ex[local_dof_indices[k]] * psi_k;
+                Ey_total += Ey[local_dof_indices[k]] * psi_k;
+            }
+
+            // Then contributing this quadrature's point integral part to cell_matrix
             for (unsigned int i = 0; i < dofs_per_cell; ++i)
             {
                 for (unsigned int j = 0; j < dofs_per_cell; ++j)
@@ -156,17 +167,7 @@ void create_E_psi_grad_psi_matrix_axial(
                     auto grad_psi_i = fe_values.shape_grad(i, q_index);
                     double psi_j = fe_values.shape_value(j, q_index);
 
-                    double Ex_total = 0;
-                    double Ey_total = 0;
 
-
-                    this_point_potential_gradient = 0;
-                    for (unsigned int k = 0; k < dofs_per_cell; ++k) // Iterating over components of phi in this cell
-                    {
-                        auto psi_k = fe_values.shape_value(k, q_index);
-                        Ex_total += Ex[local_dof_indices[k]] * psi_k;
-                        Ey_total += Ey[local_dof_indices[k]] * psi_k;
-                    }
 
                     cell_matrix(i, j) += (
                                 (-Ex_total * grad_psi_i[0] + -Ey_total * grad_psi_i[1])

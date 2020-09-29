@@ -73,7 +73,7 @@ void MeshRefiner::update_objects()
 
 void MeshRefiner::estimate(const dealii::Vector<double>& estimate_by)
 {
-    const unsigned int max_grid_level = 2;
+    const unsigned int max_grid_level = 3;
 
     Vector<float> estimated_error_per_cell(m_fe_global_res.triangulation().n_active_cells());
 
@@ -87,8 +87,8 @@ void MeshRefiner::estimate(const dealii::Vector<double>& estimate_by)
 
     GridRefinement::refine_and_coarsen_fixed_fraction(m_fe_global_res.triangulation(),
                                                       estimated_error_per_cell,
-                                                      0.6,
-                                                      0.4, 150000);
+                                                      0.3,
+                                                      0.0, 100000);
 
     if (m_fe_global_res.triangulation().n_levels() > max_grid_level)
     {

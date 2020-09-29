@@ -52,8 +52,6 @@ protected:
     dealii::Vector<double> m_derivative;
     dealii::Vector<double> m_concentration;
     dealii::Vector<double> m_tmp;
-
-    const std::string m_name;
 };
 
 class FractionWithImplicit : public Fraction

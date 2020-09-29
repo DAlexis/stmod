@@ -2,6 +2,7 @@
 #include <deal.II/lac/affine_constraints.h>
 #include <deal.II/base/numbers.h>
 
+#include <tbb/parallel_for.h>
 #include <stdexcept>
 
 using namespace dealii;
@@ -13,7 +14,7 @@ VariablesCollector::VariablesCollector(const dealii::AffineConstraints<double>& 
 
 void VariablesCollector::add_derivatives_provider(VariableWithDerivative* steppable)
 {
-    m_steppables.push_back(steppable);
+    m_variables.push_back(steppable);
 }
 
 void VariablesCollector::add_pre_step_computator(IPreStepComputer* pre_step)
@@ -21,7 +22,7 @@ void VariablesCollector::add_pre_step_computator(IPreStepComputer* pre_step)
     m_pre_step_jobs.push_back(pre_step);
 }
 
-void VariablesCollector::add_implicit_steppable(IImplicitSteppable* implicit_steppable)
+void VariablesCollector::add_implicit_steppable(ImplicitSteppable* implicit_steppable)
 {
     m_implicit_steppables.push_back(implicit_steppable);
 }
@@ -40,7 +41,7 @@ void VariablesCollector::push_values(const Vector<double> &y)
 {
     assert_size();
     dealii::Vector<double>::size_type current_offset = 0;
-    for (auto steppable : m_steppables)
+    for (auto steppable : m_variables)
     {
         auto & target_vector = steppable->values_w();
         copy_vector_part(target_vector, 0, target_vector.size(),
@@ -62,7 +63,7 @@ void VariablesCollector::pull_values_to_storage()
 {
     assert_size();
     dealii::Vector<double>::size_type current_offset = 0;
-    for (auto steppable : m_steppables)
+    for (auto steppable : m_variables)
     {
         const auto & values = steppable->values();
 
@@ -76,7 +77,7 @@ void VariablesCollector::pull_derivatives()
 {
     assert_size();
     dealii::Vector<double>::size_type current_offset = 0;
-    for (auto steppable : m_steppables)
+    for (auto steppable : m_variables)
     {
         const auto & derivatives = steppable->derivatives();
 
@@ -95,10 +96,18 @@ void VariablesCollector::compute_in_places(double t)
         pre_step->compute(t);
     }
 
-    for (auto steppable : m_steppables)
+    tbb::parallel_for(
+        (size_t) 0, m_variables.size(),
+        [this, t]( size_t l )
+        {
+            m_variables[l]->compute_derivatives(t);
+        }
+    );
+/*
+    for (auto steppable : m_variables)
     {
         steppable->compute_derivatives(t);
-    }
+    }*/
 }
 
 void VariablesCollector::implicit_deltas_collect(double t, double dt, double theta)
@@ -125,6 +134,14 @@ const dealii::Vector<double>& VariablesCollector::compute_derivatives(double t, 
     pull_derivatives();
     //limit_derivatives(limiting_dt, y, m_derivatives);
     return all_derivatives();
+}
+
+const VariableWithDerivative* VariablesCollector::variable_by_global_index(size_t index)
+{
+    if (m_variables.empty())
+        return nullptr;
+
+    return m_variables[index / m_variables[0]->values().size()];
 }
 
 void VariablesCollector::limit_derivatives(double dt, const dealii::Vector<double>& y, dealii::Vector<double>& derivatives)
@@ -155,7 +172,7 @@ void VariablesCollector::assert_finite()
 dealii::Vector<double>::size_type VariablesCollector::get_total_size()
 {
     dealii::Vector<double>::size_type total_size = 0;
-    for (auto steppable : m_steppables)
+    for (auto steppable : m_variables)
     {
         total_size += steppable->values().size();
     }
@@ -176,6 +193,23 @@ void VariablesCollector::copy_vector_part(
     memcpy(target.data() + target_begin, source.data() + source_begin, size * sizeof(double));
 }
 
+void SimpleTimeStepEstimator::min_x_over_dot_x(const dealii::Vector<double>& x, const dealii::Vector<double>& dot_x)
+{
+    fastest_time = 1e100;
+    for (dealii::Vector<double>::size_type i = 0; i < x.size(); i++)
+    {
+        if (dot_x[i] != 0.0 && x[i] != 0.0)
+        {
+            double time = fabs(x[i] / dot_x[i]);
+            if (time < fastest_time)
+            {
+                fastest_time = time;
+                fastest_index = i;
+            }
+        }
+    }
+}
+
 StmodTimeStepper::StmodTimeStepper()
 {
 }
@@ -187,20 +221,20 @@ void StmodTimeStepper::init()
 
 
 
-    const double coarsen_param = 1.2;
-    const double refine_param  = 0.8;
-    const double min_delta     = 1e-13;
+    const double coarsen_param = 1.1;
+    const double refine_param  = 0.9;
+    const double min_delta     = 1e-11;
     const double max_delta     = 1e-9;
 
     /*const double refine_tol    = 1e-5;
     const double coarsen_tol   = 1e-7;*/
 
-    const double refine_tol    = 1e-2;
-    const double coarsen_tol   = 1e-4;
+    const double refine_tol    = 1e-3;
+    const double coarsen_tol   = 1e-5;
 
     m_embedded_stepper = std::make_shared<TimeStepping::EmbeddedExplicitRungeKutta<Vector<double>>>(
         //TimeStepping::FORWARD_EULER,
-        TimeStepping::BOGACKI_SHAMPINE,
+        TimeStepping::CASH_KARP,
         coarsen_param,
         refine_param,
         min_delta,
@@ -222,6 +256,12 @@ double StmodTimeStepper::iterate(VariablesCollector& collector, double t, double
 
     // Saving this array
     m_on_explicit_begin = collector.stored_values();
+
+    auto derivs = collector.compute_derivatives(t, m_on_explicit_begin, 0);
+    SimpleTimeStepEstimator stse;
+    stse.min_x_over_dot_x(m_on_explicit_begin, derivs);
+
+    std::cout << "estimated steps: " << stse.fastest_time << "  for " << collector.variable_by_global_index(stse.fastest_index)->name() << " (index=" << stse.fastest_index << ") | ";
 
     double resulting_t = t;
 

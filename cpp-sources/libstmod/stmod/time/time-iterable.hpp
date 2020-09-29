@@ -22,11 +22,11 @@ public:
     virtual ~IPreStepComputer() = default;
 };
 
-class IImplicitSteppable : public virtual Variable
+class ImplicitSteppable : public virtual Variable
 {
 public:
     virtual const dealii::Vector<double>& get_implicit_delta(double dt, double theta = 0.5) = 0;
-    virtual ~IImplicitSteppable() = default;
+    virtual ~ImplicitSteppable() = default;
 };
 
 #endif // I_STEPPABLE_HPP_INCLUDED

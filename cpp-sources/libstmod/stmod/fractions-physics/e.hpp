@@ -33,22 +33,17 @@ struct ElectronsParameters
     //double D_e = 0.0; // m^2 s^-1
 };
 
-class Electrons : public Fraction, public IImplicitSteppable
+class Electrons : public Fraction, public ImplicitSteppable
 {
 public:
     Electrons(const FEGlobalResources& fe_res);
 
-    // IVariablesStorage
-    dealii::Vector<double>& values_w() override;
-
     // IMeshBased
     void init_mesh_dependent(const dealii::DoFHandler<2>& dof_handler) override;
 
-    const dealii::Vector<double>& derivative() const;
+    void compute_derivatives(double t) override;
 
-    dealii::Vector<double>& value_w();
-
-    void set_electric_field(const dealii::Vector<double>& Ex, const dealii::Vector<double>& Ey);
+    void set_electric_field(const dealii::Vector<double>& Ex, const dealii::Vector<double>& Ey, const dealii::Vector<double>& total_charge);
 
     const dealii::Vector<double>& get_implicit_delta(double dt, double theta = 0.5);
 
@@ -66,8 +61,6 @@ private:
     dealii::Vector<double> m_tmp_vector;
     dealii::Vector<double> m_implicit_rhs;
 
-    dealii::SparseMatrix<double> m_E_grad_psi_psi_matrix;
-
     dealii::SparseMatrix<double> m_implicit_rhs_matrix;
     dealii::SparseMatrix<double> m_implicit_system_matrix;
     dealii::SparseMatrix<double> m_tmp_matrix;
@@ -76,10 +69,11 @@ private:
 
     const dealii::Vector<double>* m_Ex = nullptr;
     const dealii::Vector<double>* m_Ey = nullptr;
+    const dealii::Vector<double>* m_total_charge = nullptr;
 
     std::map<dealii::types::global_dof_index, double> m_boundary_values;
 
-    const std::string m_names[2] = {"Electrons_density", "Electrons_density_derivative"};
+    static const std::string m_names[2];
 };
 
 #endif // FRACTIONS_PHYSICS_E_HPP_INCLUDED

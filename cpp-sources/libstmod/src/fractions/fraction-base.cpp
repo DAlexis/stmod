@@ -1,7 +1,6 @@
 #include "stmod/fractions/secondary-value.hpp"
 
-SecondaryValue::SecondaryValue(const std::string& name) :
-    m_name(name)
+SecondaryValue::SecondaryValue()
 {
 }
 
@@ -31,7 +30,7 @@ size_t SecondaryValue::output_values_count() const
 }
 
 SecondaryConstant::SecondaryConstant(const std::string& name, double value) :
-    SecondaryValue(name), m_current_scalar_value(value)
+    Variable(name), m_current_scalar_value(value)
 {
 
 }
@@ -54,7 +53,7 @@ SecondaryConstant::operator double() const
 }
 
 SecondaryFunction::SecondaryFunction(const std::string& name, Lambda func) :
-    SecondaryValue(name), m_func(func)
+    Variable(name), m_func(func)
 {
 }
 

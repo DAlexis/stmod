@@ -2,7 +2,7 @@
 
 
 Fraction::Fraction(const std::string& name) :
-    m_name(name)
+    Variable(name)
 {
 }
 

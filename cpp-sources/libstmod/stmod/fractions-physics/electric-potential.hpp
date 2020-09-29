@@ -78,7 +78,7 @@ private:
 
     double m_needle_potential = 0, m_bottom_potential = 0;
 
-    const std::string m_name = "Electric_potential";
+    static const std::string m_name;
     const std::string m_name_pot = "electric_field_phi";
     const std::string m_name_Ex = "electric_field_Ex";
     const std::string m_name_Ey = "electric_field_Ey";
