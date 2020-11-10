@@ -3,7 +3,9 @@
 #include "stmod/fe-sampler.hpp"
 #include "stmod/field-output.hpp"
 #include "stmod/fractions/fraction.hpp"
-#include "stmod/fractions-physics/divergence.hpp"
+#include "stmod/field-operating/gradient.hpp"
+#include "stmod/field-operating/l2norm.hpp"
+#include "stmod/field-operating/divergence.hpp"
 #include "stmod/fractions-physics/e.hpp"
 #include "stmod/fractions-physics/electrons-flow.hpp"
 #include "stmod/fractions-physics/electric-potential.hpp"
@@ -127,52 +129,23 @@ void ModelOne::init_fractions()
     std::cout << "   Fractions added" << std::endl;
 
     // Creating main secondary functions
-    m_electric_potential.reset(new ElectricPotential (*m_global_resources));
-    m_refiner->add_mesh_based(m_electric_potential.get());
-    m_variables_collector->add_pre_step_computator(m_electric_potential.get());
-    m_output_maker.add(m_electric_potential.get());
+    add_secondary(m_electric_potential, new ElectricPotential (*m_global_resources));
+    add_secondary(m_E_x, new Gradient (*m_global_resources, *m_electric_potential, "E_x", 0, -1.0));
+    add_secondary(m_E_y, new Gradient (*m_global_resources, *m_electric_potential, "E_y", 1, -1.0));
+    add_secondary(m_E_norm, new L2Norm(*m_E_x, *m_E_y, "E_norm"));
 
 
-    m_electrons_flow_x.reset(new ElectronsFlow(*m_global_resources, 0, *m_electrons_flow_parameters));
-    m_electrons_flow_x->set_electric_field(m_electric_potential->E_x());
-    m_electrons_flow_x->set_electrons_density(*m_Ne);
-    m_refiner->add_mesh_based(m_electrons_flow_x.get());
-    m_variables_collector->add_pre_step_computator(m_electrons_flow_x.get());
-    m_output_maker.add(m_electrons_flow_x.get());
+    add_secondary(m_electrons_flow_x, new ElectronsFlow(*m_global_resources, *m_Ne, *m_E_x, 0, *m_electrons_flow_parameters));
+    add_secondary(m_electrons_flow_y, new ElectronsFlow(*m_global_resources, *m_Ne, *m_E_y, 1, *m_electrons_flow_parameters));
 
-    m_electrons_flow_y.reset(new ElectronsFlow(*m_global_resources, 1, *m_electrons_flow_parameters));
-    m_electrons_flow_y->set_electric_field(m_electric_potential->E_y());
-    m_electrons_flow_y->set_electrons_density(*m_Ne);
-    m_refiner->add_mesh_based(m_electrons_flow_y.get());
-    m_variables_collector->add_pre_step_computator(m_electrons_flow_y.get());
-    m_output_maker.add(m_electrons_flow_y.get());
-
-    m_div_J.reset(new Divergence(*m_global_resources, *m_electrons_flow_x, *m_electrons_flow_y, "elec_flow_divergence"));
-    //m_div_J.reset(new Divergence(*m_global_resources, m_electric_potential->E_x(), m_electric_potential->E_y(), "elec_flow_divergence"));
-    m_refiner->add_mesh_based(m_div_J.get());
-    m_variables_collector->add_pre_step_computator(m_div_J.get());
-    m_output_maker.add(m_div_J.get());
-
-/*
-    m_heat_power_2.reset(new HeatPower (*m_global_resources, m_Ne->values(), m_electric_potential->values(), m_Ne->parameters.mu_e));
-    m_refiner->add_mesh_based(m_heat_power_2.get());
-    m_variables_collector->add_pre_step_computator(m_heat_power_2.get());
-    m_output_maker.add(m_heat_power_2.get());*/
+    add_secondary(m_div_J, new Divergence(*m_global_resources, *m_electrons_flow_x, *m_electrons_flow_y, "elec_flow_divergence"));
 
     add_secondary(m_heat_power, new SecondaryFunction("heat_power",
         [this](dealii::types::global_dof_index i, double)
         {
             double Ne = m_Ne->values()[i];
-            double E = m_electric_potential->E_scalar()[i];
+            double E = m_E_norm->values()[i];
             return 1.6e-19 * (5.92 * Ne) * pow(E, 2);
-        }
-    ));
-
-    add_secondary(m_E_field, new SecondaryFunction("E_field",
-        [this](dealii::types::global_dof_index i, double)
-        {
-            double E = m_electric_potential->E_scalar()[i];
-            return E;
         }
     ));
 
@@ -202,7 +175,7 @@ void ModelOne::init_fractions()
     add_secondary(m_Td, new SecondaryFunction("Td",
         [this](dealii::types::global_dof_index i, double)
         {
-            double E_scalar = m_electric_potential->E_scalar()[i];
+            double E_scalar = m_E_norm->values()[i];
             return 1e21 * E_scalar / (*m_M)[i];
         }
     ));
@@ -735,9 +708,9 @@ void ModelOne::init_fractions()
     m_electric_potential->add_charge(m_O_4_minus->values(), -Consts::e);
     m_electric_potential->add_charge(m_N_p->values(), Consts::e);*/
 
-    m_Ne->set_electric_field(m_electric_potential->E_x(), m_electric_potential->E_y(), m_electric_potential->total_chagre());
+    //m_Ne->set_electric_field(*m_E_x, *m_E_y, m_electric_potential->total_chagre());
 
-    m_variables_collector->add_implicit_steppable(m_Ne.get());
+    //m_variables_collector->add_implicit_steppable(m_Ne.get());
     std::cout << "   All fractions setup done" << std::endl;
 }
 
@@ -783,7 +756,7 @@ void ModelOne::run()
         */
         std::cout << "# Number of dofs: " << m_global_resources->n_dofs() << std::endl;
         double t_new = stepper.iterate(*m_variables_collector, t, dt);
-        //m_Ne->apply_boundary_to_concentration();
+        m_Ne->apply_cathode_supression();
         //m_refiner->do_refine(m_Ne->values());
         dt = t_new - t;
         t = t_new;
@@ -828,13 +801,12 @@ std::string ModelOne::make_output_filename(double t)
     return filename.str();
 }
 
-void ModelOne::add_secondary(std::unique_ptr<SecondaryValue>& uniq_ptr, SecondaryValue* value, bool need_output)
+void ModelOne::register_secondary(SecondaryValue* value, bool need_output)
 {
-    uniq_ptr.reset(value);
-    m_refiner->add_mesh_based(uniq_ptr.get());
-    m_variables_collector->add_pre_step_computator(uniq_ptr.get());
+    m_refiner->add_mesh_based(value);
+    m_variables_collector->add_pre_step_computator(value);
     if (need_output)
-        m_output_maker.add(uniq_ptr.get());
+        m_output_maker.add(value);
 }
 
 void ModelOne::add_fraction(std::unique_ptr<Fraction>& uniq_ptr, Fraction* fraction)
@@ -854,3 +826,4 @@ double ModelOne::secondary_M(double T)
 {
     return 2.7e25 * (((760))) / 760 * 273 / T;
 }
+

@@ -3,8 +3,18 @@
 
 #include <deal.II/numerics/matrix_tools.h>
 
-ElectronsFlow::ElectronsFlow(const FEGlobalResources& fe_res, size_t component, ElectronsFlowParameters flow_parameters) :
-    m_fe_global_res(fe_res), m_flow_parameters(flow_parameters), m_component(component), ScalarVariable(std::string("electrons_flow_") + std::to_string(component))
+ElectronsFlow::ElectronsFlow(
+        const FEGlobalResources& fe_res,
+        const dealii::Vector<double>& concentration,
+        const dealii::Vector<double>& E_field_component,
+        size_t component,
+        ElectronsFlowParameters flow_parameters) :
+    m_fe_global_res(fe_res),
+    m_flow_parameters(flow_parameters),
+    m_n_e(concentration),
+    m_E_component(E_field_component),
+    m_component(component),
+    ScalarVariable(std::string("electrons_flow_") + std::to_string(component))
 {
 }
 
@@ -22,57 +32,24 @@ void ElectronsFlow::init_mesh_dependent(const dealii::DoFHandler<2>& dof_handler
 
 void ElectronsFlow::compute(double)
 {
+    // First computing diffusion flow
     m_value = 0;
 
     // Creating rhs matrix
     m_rhs_matrix = 0;
 
-    // Drifting part
-    m_tmp_matrix = 0;
-    create_E_psi_psi_matrix(
-            *m_E_component,
-            m_fe_global_res.dof_handler(),
-            m_tmp_matrix);
-
-    m_rhs_matrix.add(-m_flow_parameters.mu, m_tmp_matrix);
-
     // Diffusion part
-    m_tmp_matrix = 0;
-    create_r_grad_phi_i_comp_phi_j_axial(
-            m_fe_global_res.dof_handler(),
-            m_tmp_matrix,
-            m_component);
+    m_rhs = 0;
+    m_fe_global_res.r_grad_phi_i_comp_phi_j(m_component).vmult(m_rhs, m_n_e);
+    m_fe_global_res.inverse_mass_matrix().vmult(m_value, m_rhs);
+    m_value /= -m_flow_parameters.D;
 
-    m_rhs_matrix.add(-m_flow_parameters.D, m_tmp_matrix);
+    // Frifting flow
 
-    //m_rhs_matrix.add(m_flow_parameters.D, m_fe_global_res.laplace_matrix()); // TODO: not a Laplace matrix! fix this!!
-
-    // Creating rhs
-    m_rhs_matrix.vmult(m_rhs, *m_n_e);
-
-    // Preparing to solve system
-    m_system_matrix.copy_from(m_fe_global_res.mass_matrix());
-    m_fe_global_res.constraints().condense(m_system_matrix, m_rhs);
-
-    // Applying boundary conditions
-    dealii::MatrixTools::apply_boundary_values(m_boundary_values,
-                                     m_system_matrix,
-                                     m_value,
-                                     m_rhs);
-
-    // Solving system
-    m_system_matrix_inverse.initialize(m_system_matrix);
-    m_system_matrix_inverse.vmult(m_value, m_rhs);
+    for (dealii::Vector<double>::size_type i = 0; i < m_value.size(); i++)
+    {
+        m_value[i] += -m_flow_parameters.mu * m_n_e[i] * m_E_component[i];
+    }
 
     m_fe_global_res.constraints().distribute(m_value);
-}
-
-void ElectronsFlow::set_electric_field(const dealii::Vector<double>& E_component)
-{
-    m_E_component = &E_component;
-}
-
-void ElectronsFlow::set_electrons_density(const dealii::Vector<double>& n_e)
-{
-    m_n_e = &n_e;
 }

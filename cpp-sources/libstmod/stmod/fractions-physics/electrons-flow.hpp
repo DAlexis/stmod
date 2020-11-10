@@ -15,6 +15,8 @@ class ElectronsFlow : public SecondaryValue
 public:
     ElectronsFlow(
             const FEGlobalResources& fe_res,
+            const dealii::Vector<double>& concentration,
+            const dealii::Vector<double>& E_field_component,
             size_t component,
             ElectronsFlowParameters flow_parameters);
 
@@ -32,8 +34,8 @@ private:
     const FEGlobalResources& m_fe_global_res;
     const ElectronsFlowParameters m_flow_parameters;
 
-    const dealii::Vector<double>* m_n_e = nullptr;
-    const dealii::Vector<double>* m_E_component = nullptr;
+    const dealii::Vector<double>& m_n_e;
+    const dealii::Vector<double>& m_E_component;
 
     double m_component;
     dealii::Vector<double> m_rhs;

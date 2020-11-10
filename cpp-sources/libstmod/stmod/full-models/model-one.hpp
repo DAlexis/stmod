@@ -16,7 +16,9 @@ class SecondaryConstant;
 class SecondaryFunction;
 class ElectronsFlowParameters;
 class ElectronsFlow;
+class Gradient;
 class Divergence;
+class L2Norm;
 
 class ModelOne
 {
@@ -33,7 +35,13 @@ public:
 
 private:
     std::string make_output_filename(double t);
-    void add_secondary(std::unique_ptr<SecondaryValue>& uniq_ptr, SecondaryValue* value, bool need_output = true);
+    template<typename UniqPtrType, typename PtrType>
+    void add_secondary(std::unique_ptr<UniqPtrType>& uniq_ptr, PtrType* value, bool need_output = true)
+    {
+        uniq_ptr.reset(value);
+        register_secondary(uniq_ptr.get());
+    }
+    void register_secondary(SecondaryValue* value, bool need_output = true);
     void add_fraction(std::unique_ptr<Fraction>& uniq_ptr, Fraction* fraction);
 
     static double secondary_L(double T, double M);
@@ -54,6 +62,9 @@ private:
 
     // Main secondary functions
     std::unique_ptr<ElectricPotential> m_electric_potential;
+    std::unique_ptr<Gradient> m_E_x;
+    std::unique_ptr<Gradient> m_E_y;
+    std::unique_ptr<L2Norm> m_E_norm;
     std::unique_ptr<ElectronsFlow> m_electrons_flow_x;
     std::unique_ptr<ElectronsFlow> m_electrons_flow_y;
     //std::unique_ptr<HeatPower> m_heat_power_2;
@@ -66,8 +77,6 @@ private:
     std::unique_ptr<SecondaryValue> m_f_v;
     std::unique_ptr<SecondaryValue> m_heat_power;
     std::unique_ptr<SecondaryValue> m_L;
-
-    std::unique_ptr<SecondaryValue> m_E_field;
 
 
     // Additional secondary functions

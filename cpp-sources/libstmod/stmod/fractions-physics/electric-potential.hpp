@@ -30,29 +30,14 @@ public:
 
     void set_electric_parameters(const ElectricParameters& electric_parameters);
 
-    const std::vector<dealii::Tensor<1, 2>>& E_vector();
-    const dealii::Vector<double>& E_scalar();
-    const dealii::Vector<double>& E_x();
-    const dealii::Vector<double>& E_y();
-
-    const std::string& output_name(size_t index) const override;
-    const dealii::Vector<double>& output_value(size_t index) const override;
-    size_t output_values_count() const override;
-
 private:
     void calc_total_charge();
-
-    void create_e_field();
-    void create_rhs_matrix(unsigned int component);
 
     ElectricParameters m_electric_parameters;
 
     const FEGlobalResources& m_fe_global_res;
 
     dealii::SparseMatrix<double> m_system_matrix;
-
-    dealii::SparseMatrix<double> m_E_x_rhs_matrix;
-    dealii::SparseMatrix<double> m_E_y_rhs_matrix;
 
     dealii::SparseDirectUMFPACK m_mass_matrix_inverse;
 

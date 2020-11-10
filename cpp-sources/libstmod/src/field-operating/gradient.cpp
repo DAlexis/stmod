@@ -1,4 +1,4 @@
-#include "stmod/fractions/gradient.hpp"
+#include "stmod/field-operating/gradient.hpp"
 
 Gradient::Gradient(
         const FEGlobalResources& fe_res,

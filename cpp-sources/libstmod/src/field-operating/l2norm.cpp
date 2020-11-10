@@ -1,4 +1,4 @@
-#include  "stmod/fractions/l2norm.hpp"
+#include  "stmod/field-operating/l2norm.hpp"
 
 L2Norm::L2Norm(const dealii::Vector<double>& field_x,
        const dealii::Vector<double>& field_y,
@@ -11,6 +11,6 @@ void L2Norm::compute(double)
 {
     for (dealii::Vector<double>::size_type i = 0; i < m_value.size(); i++)
     {
-        m_value[i] = sqrt(pow(m_field_x[i], 2) + pow(m_field_x[i], 2));
+        m_value[i] = sqrt(pow(m_field_x[i], 2) + pow(m_field_y[i], 2));
     }
 }

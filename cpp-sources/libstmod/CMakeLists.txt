@@ -11,13 +11,13 @@ set(LIB_SOURCE
     ${PROJECT_SOURCE_DIR}/src/fe-common.cpp
     ${PROJECT_SOURCE_DIR}/src/fe-sampler.cpp
     ${PROJECT_SOURCE_DIR}/src/field-output.cpp
+    ${PROJECT_SOURCE_DIR}/src/field-operating/gradient.cpp
+    ${PROJECT_SOURCE_DIR}/src/field-operating/l2norm.cpp
+    ${PROJECT_SOURCE_DIR}/src/field-operating/divergence.cpp
     ${PROJECT_SOURCE_DIR}/src/fractions/fraction-base.cpp
     ${PROJECT_SOURCE_DIR}/src/fractions/fraction.cpp
-    ${PROJECT_SOURCE_DIR}/src/fractions/gradient.cpp
-    ${PROJECT_SOURCE_DIR}/src/fractions/l2norm.cpp
     ${PROJECT_SOURCE_DIR}/src/fractions-physics/e.cpp
     ${PROJECT_SOURCE_DIR}/src/fractions-physics/electrons-flow.cpp
-    ${PROJECT_SOURCE_DIR}/src/fractions-physics/divergence.cpp
     ${PROJECT_SOURCE_DIR}/src/fractions-physics/heat-power.cpp
     ${PROJECT_SOURCE_DIR}/src/fractions-physics/electric-potential.cpp
     ${PROJECT_SOURCE_DIR}/src/fractions-physics/reaction-constants.cpp
@@ -36,12 +36,12 @@ set(LIB_HPP
     ${PROJECT_SOURCE_DIR}/stmod/fe-common.hpp
     ${PROJECT_SOURCE_DIR}/stmod/fe-sampler.hpp
     ${PROJECT_SOURCE_DIR}/stmod/field-output.hpp
+    ${PROJECT_SOURCE_DIR}/stmod/field-operating/divergence.hpp
+    ${PROJECT_SOURCE_DIR}/stmod/field-operating/gradient.hpp
+    ${PROJECT_SOURCE_DIR}/stmod/field-operating/l2norm.hpp
     ${PROJECT_SOURCE_DIR}/stmod/fractions/fraction.hpp
-    ${PROJECT_SOURCE_DIR}/stmod/fractions/gradient.hpp
-    ${PROJECT_SOURCE_DIR}/stmod/fractions/l2norm.hpp
     ${PROJECT_SOURCE_DIR}/stmod/fractions-physics/e.hpp
     ${PROJECT_SOURCE_DIR}/stmod/fractions-physics/electrons-flow.hpp
-    ${PROJECT_SOURCE_DIR}/stmod/fractions-physics/divergence.hpp
     ${PROJECT_SOURCE_DIR}/stmod/fractions-physics/heat-power.hpp
     ${PROJECT_SOURCE_DIR}/stmod/fractions-physics/electric-potential.hpp
     ${PROJECT_SOURCE_DIR}/stmod/fractions-physics/reaction-constants.hpp

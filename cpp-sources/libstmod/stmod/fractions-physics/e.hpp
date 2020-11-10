@@ -14,18 +14,7 @@
 #include <vector>
 #include <tuple>
 
-struct ElectronsParameters
-{
-    double mu_e = 5.92; // m^2 V^-1 s^-1
-    //double mu_e = 5.92e-3; // m^2 V^-1 s^-1
-    //double mu_e = 0.0; // m^2 V^-1 s^-1
-    //double D_e = 0.1; // m^2 s^-1
-    double D_e = 0.1; // m^2 s^-1
-    //double D_e = 1; // m^2 s^-1
-    //double D_e = 0.0; // m^2 s^-1
-};
-
-class Electrons : public Fraction, public ImplicitSteppable
+class Electrons : public Fraction
 {
 public:
     Electrons(const FEGlobalResources& fe_res);
@@ -35,35 +24,28 @@ public:
 
     void compute_derivatives(double t) override;
 
-    void set_electric_field(const dealii::Vector<double>& Ex, const dealii::Vector<double>& Ey, const dealii::Vector<double>& total_charge);
-
-    void apply_boundary_to_concentration();
-
-    const dealii::Vector<double>& get_implicit_delta(double dt, double theta = 0.5);
+    void apply_cathode_supression();
 
     Fraction& operator=(double value);
 
-    ElectronsParameters parameters;
-
 private:
+    class CathodeSupressionFunction : public dealii::Function<2>
+    {
+    public:
+        CathodeSupressionFunction(double scale);
+        double value(const dealii::Point<2> &p, const unsigned int component = 0) const override;
+
+    private:
+        double m_scale;
+    };
     using PairSourceTuple = std::tuple<const dealii::Vector<double>*, const dealii::Vector<double>*>;
+
+    void create_cathode_supression_field();
 
     const FEGlobalResources& m_fe_global_res;
 
     dealii::Vector<double> m_system_rhs;
-
-    dealii::Vector<double> m_tmp_vector;
-    dealii::Vector<double> m_implicit_rhs;
-
-    dealii::SparseMatrix<double> m_implicit_rhs_matrix;
-    dealii::SparseMatrix<double> m_implicit_system_matrix;
-    dealii::SparseMatrix<double> m_tmp_matrix;
-    dealii::SparseDirectUMFPACK m_implicit_system_reversed;
-    dealii::Vector<double> m_implicit_delta;
-
-    const dealii::Vector<double>* m_Ex = nullptr;
-    const dealii::Vector<double>* m_Ey = nullptr;
-    const dealii::Vector<double>* m_total_charge = nullptr;
+    dealii::Vector<double> m_cathode_supression_field;
 
     std::map<dealii::types::global_dof_index, double> m_boundary_values;
 

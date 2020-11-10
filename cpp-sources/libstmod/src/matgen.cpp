@@ -3,7 +3,7 @@
 #include <deal.II/base/quadrature_lib.h>
 #include <deal.II/fe/fe_values.h>
 
-#define DEBUG_NO_AXIAL
+//#define DEBUG_NO_AXIAL
 
 using namespace dealii;
 

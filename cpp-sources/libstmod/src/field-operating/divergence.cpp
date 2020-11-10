@@ -1,4 +1,4 @@
-#include "stmod/fractions-physics/divergence.hpp"
+#include "stmod/field-operating/divergence.hpp"
 #include "stmod/matgen.hpp"
 #include "stmod/grid/grid.hpp"
 
@@ -53,10 +53,12 @@ void Divergence::compute(double t)
     m_tmp = 0;
     m_value = 0;
 
-    m_dfield_dx_rhs_matrix.vmult(m_rhs, m_field_x);
-    m_dfield_dy_rhs_matrix.vmult(m_tmp, m_field_y);
+    m_fe_global_res.r_grad_phi_i_comp_phi_j(0).vmult(m_rhs, m_field_x);
+    m_fe_global_res.r_grad_phi_i_comp_phi_j(1).vmult(m_tmp, m_field_y);
     m_rhs += m_tmp;
 
+    m_fe_global_res.inverse_mass_matrix().vmult(m_value, m_rhs);
+/*
     m_system_matrix.copy_from(m_fe_global_res.mass_matrix());
     m_fe_global_res.constraints().condense(m_system_matrix, m_rhs);
 
@@ -67,6 +69,6 @@ void Divergence::compute(double t)
                                      m_rhs);
 
     m_mass_matrix_inverse.initialize(m_system_matrix);
-    m_mass_matrix_inverse.vmult(m_value, m_rhs);
+    m_mass_matrix_inverse.vmult(m_value, m_rhs);*/
     m_fe_global_res.constraints().distribute(m_value);
 }

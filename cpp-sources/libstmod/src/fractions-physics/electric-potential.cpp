@@ -36,12 +36,8 @@ void ElectricPotential::init_mesh_dependent(const dealii::DoFHandler<2>& dof_han
     m_E_y.reinit(m_fe_global_res.dof_handler().n_dofs());
 
     m_system_matrix.reinit(m_fe_global_res.sparsity_pattern());
-    m_E_x_rhs_matrix.reinit(m_fe_global_res.sparsity_pattern());
-    m_E_y_rhs_matrix.reinit(m_fe_global_res.sparsity_pattern());
 
     m_mass_matrix_inverse.initialize(m_fe_global_res.mass_matrix());
-    create_r_grad_phi_i_comp_phi_j_axial(m_fe_global_res.dof_handler(), m_E_x_rhs_matrix, 0);
-    create_r_grad_phi_i_comp_phi_j_axial(m_fe_global_res.dof_handler(), m_E_y_rhs_matrix, 1);
 
     // Creating bounndary values map
     m_boundary_values.clear();
@@ -58,8 +54,6 @@ void ElectricPotential::init_mesh_dependent(const dealii::DoFHandler<2>& dof_han
 
 void ElectricPotential::compute(double t)
 {
-    //std::cout << "Computing electric potential..." << std::endl;
-
     m_total_charge = 0;
     for (size_t i=0; i < m_charges.size(); i++)
     {
@@ -82,9 +76,6 @@ void ElectricPotential::compute(double t)
     m_system_matrix_inverse.vmult(m_value, m_system_rhs);
 
     m_fe_global_res.constraints().distribute(m_value);
-
-    create_e_field();
-    //std::cout << "Computing electric potential done" << std::endl;
 }
 
 void ElectricPotential::add_charge(const dealii::Vector<double>& charge_vector, double mul)
@@ -103,22 +94,6 @@ void ElectricPotential::set_electric_parameters(const ElectricParameters& electr
     m_electric_parameters = electric_parameters;
 }
 
-const dealii::Vector<double>& ElectricPotential::E_scalar()
-{
-    return m_E_scalar;
-}
-
-const dealii::Vector<double>& ElectricPotential::E_x()
-{
-    return m_E_x;
-}
-
-const dealii::Vector<double>& ElectricPotential::E_y()
-{
-    return m_E_y;
-}
-
-
 void ElectricPotential::calc_total_charge()
 {
     m_total_charge = 0;
@@ -128,115 +103,3 @@ void ElectricPotential::calc_total_charge()
     }
 }
 
-void ElectricPotential::create_e_field()
-{
-    m_E_x = 0;
-    m_E_y = 0;
-
-    m_E_x_rhs_matrix.vmult(m_Ex_rhs, m_value);
-    m_mass_matrix_inverse.vmult(m_E_x, m_Ex_rhs);
-    m_fe_global_res.constraints().distribute(m_E_x);
-    m_E_x *= -1.0;
-
-    m_E_y_rhs_matrix.vmult(m_Ey_rhs, m_value);
-    m_mass_matrix_inverse.vmult(m_E_y, m_Ey_rhs);
-    m_fe_global_res.constraints().distribute(m_E_x);
-    m_E_y *= -1.0;
-
-    for (unsigned int i = 0; i < m_E_scalar.size(); i++)
-    {
-        m_E_scalar[i] = sqrt(pow(m_E_x[i], 2) + pow(m_E_y[i], 2));
-    }
-
-    /*
-    m_E_vector.resize(m_fe_global_res.n_dofs());
-    m_E_scalar.reinit(m_fe_global_res.n_dofs());
-
-    const dealii::Quadrature<2> & support_points = m_fe_global_res.fe().get_generalized_support_points();
-    FEValues<2> fe_values(m_fe_global_res.fe(), support_points, update_gradients);
-
-    const unsigned int dofs_per_cell = m_fe_global_res.fe().dofs_per_cell;
-    const unsigned int n_support_points  = support_points.size();
-
-    std::vector<types::global_dof_index> local_dof_indices(dofs_per_cell);
-
-    for (const auto &cell : m_fe_global_res.dof_handler().active_cell_iterators())
-    {
-        fe_values.reinit(cell);
-        cell->get_dof_indices(local_dof_indices);
-        // target_support_point_index -- index of support point where we need to calculate gradient
-        for (unsigned int target_support_point_index = 0; target_support_point_index < n_support_points; ++target_support_point_index)
-        {
-            Tensor<1, 2> gradient_value;
-            for (unsigned int i = 0; i < dofs_per_cell; ++i) // Iterating over all base functions in this cell
-            {
-                const unsigned int current_dof_index = local_dof_indices[i];
-                const double current_coefficient = m_value[current_dof_index];
-                gradient_value += current_coefficient * fe_values.shape_grad(target_support_point_index, i);
-            }
-            m_E_vector[local_dof_indices[target_support_point_index]] = -gradient_value;
-        }
-    }
-
-    for (types::global_dof_index i = 0; i < m_E_vector.size(); i++)
-    {
-        m_E_scalar[i] = m_E_vector[i].norm();
-    }*/
-
-    /*
-    m_electric_field_sampler.sample(m_value, FESampler::Targets::grad_lap);
-    auto & grads = m_electric_field_sampler.gradients();
-    for (auto i = 0; i < grads.size(); i++)
-    {
-        auto & grad = grads[i];
-        m_E_scalar[i] = grad.norm();
-        m_E_vector[i] = -grad;
-    }*/
-
-}
-
-const std::string& ElectricPotential::output_name(size_t index) const
-{
-    switch (index) {
-    case 0:
-    {
-        return m_name_pot;
-    }
-    case 1:
-    {
-        return m_name_Ex;
-    }
-    case 2:
-    {
-        return m_name_Ey;
-    }
-    case 3:
-    {
-        return m_name_E;
-    }
-
-    default:
-        throw std::invalid_argument("Invalid output index");
-    }
-}
-
-const dealii::Vector<double>& ElectricPotential::output_value(size_t index) const
-{
-    switch (index) {
-    case 0:
-        return m_value;
-    case 1:
-        return m_E_x;
-    case 2:
-        return m_E_y;
-    case 3:
-        return m_E_scalar;
-    default:
-        throw std::invalid_argument("Invalid output index");
-    }
-}
-
-size_t ElectricPotential::output_values_count() const
-{
-    return 4;
-}
