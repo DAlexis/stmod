@@ -2,7 +2,7 @@
 
 
 Fraction::Fraction(const std::string& name) :
-    Variable(name)
+    ScalarVariable(name)
 {
 }
 

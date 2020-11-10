@@ -14,6 +14,9 @@ class Fraction;
 class SecondaryValue;
 class SecondaryConstant;
 class SecondaryFunction;
+class ElectronsFlowParameters;
+class ElectronsFlow;
+class Divergence;
 
 class ModelOne
 {
@@ -46,8 +49,13 @@ private:
     std::unique_ptr<MeshRefiner> m_refiner;
     std::unique_ptr<VariablesCollector> m_variables_collector;
 
+    std::unique_ptr<ElectronsFlowParameters> m_electrons_flow_parameters;
+    std::unique_ptr<Divergence> m_div_J;
+
     // Main secondary functions
     std::unique_ptr<ElectricPotential> m_electric_potential;
+    std::unique_ptr<ElectronsFlow> m_electrons_flow_x;
+    std::unique_ptr<ElectronsFlow> m_electrons_flow_y;
     //std::unique_ptr<HeatPower> m_heat_power_2;
 
     std::unique_ptr<SecondaryValue> m_M;
@@ -61,12 +69,13 @@ private:
 
     std::unique_ptr<SecondaryValue> m_E_field;
 
+
     // Additional secondary functions
     std::unique_ptr<SecondaryValue> m_k_1;
     std::unique_ptr<SecondaryValue> m_k_2;
     std::unique_ptr<SecondaryValue> m_k_3;
     std::unique_ptr<SecondaryValue> m_k_4;
-    std::unique_ptr<SecondaryValue> m_k_5;
+//    std::unique_ptr<SecondaryValue> m_k_5;
     std::unique_ptr<SecondaryValue> m_k_6;
     std::unique_ptr<SecondaryValue> m_k_7;
     std::unique_ptr<SecondaryValue> m_k_8;

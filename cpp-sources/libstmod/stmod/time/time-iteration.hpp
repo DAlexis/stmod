@@ -95,6 +95,7 @@ private:
 
     SimpleTimeStepEstimator m_estimator;
 
+    std::shared_ptr<dealii::TimeStepping::ImplicitRungeKutta<dealii::Vector<double>>> m_implicit_stepper;
     std::shared_ptr<dealii::TimeStepping::ExplicitRungeKutta<dealii::Vector<double>>> m_stepper;
     std::shared_ptr<dealii::TimeStepping::EmbeddedExplicitRungeKutta<dealii::Vector<double>>> m_embedded_stepper;
 

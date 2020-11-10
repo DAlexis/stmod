@@ -3,7 +3,9 @@
 #include "stmod/fe-sampler.hpp"
 #include "stmod/field-output.hpp"
 #include "stmod/fractions/fraction.hpp"
+#include "stmod/fractions-physics/divergence.hpp"
 #include "stmod/fractions-physics/e.hpp"
+#include "stmod/fractions-physics/electrons-flow.hpp"
 #include "stmod/fractions-physics/electric-potential.hpp"
 #include "stmod/output/output.hpp"
 #include "stmod/time/time-iteration.hpp"
@@ -22,9 +24,51 @@
 #include <deal.II/grid/grid_out.h>
 #include <deal.II/grid/grid_in.h>
 #include <deal.II/numerics/data_out.h>
+#include <deal.II/numerics/vector_tools.h>
 
 #include <fstream>
 #include <sstream>
+
+/* TODO:
+ * В данный момент отключены:
+ * - источники электронов
+ * - источники заряда
+ * - аксиальная геометрия
+ *
+ * То есть запуск просто демонстрирует дрейф и диффузию электронов
+ */
+
+class NeInitialFunction : public dealii::Function<2>
+{
+public:
+    double value(const dealii::Point<2> &p, const unsigned int component = 0) const override
+    {
+        double result = 1e10;
+        const double y_decay = 0.001;
+        const double y_limit = 0.01475;
+        if (p[1] < 2 * y_decay && p[1] > y_decay)
+        {
+            result *= (p[1] - y_decay) / y_decay;
+        }
+        if (p[1] < y_decay)
+        {
+            result = 0.0;
+        }
+
+        if (p[1] > y_limit - y_decay && p[1] < y_limit)
+        {
+            result *= 1.0 - (p[1] - (y_limit - y_decay)) / y_decay;
+        }
+
+        if (p[1] > y_limit)
+        {
+            result = 0.0;
+        }
+
+
+        return result;
+    }
+};
 
 ModelOne::ModelOne()
 {
@@ -44,7 +88,7 @@ void ModelOne::init_grid()
     m_boundary_assigner.reset(new BoundaryAssigner(m_grid));
     m_boundary_assigner->assign_boundary_ids();
 
-    m_global_resources.reset(new FEGlobalResources(m_grid.triangulation(), 2));
+    m_global_resources.reset(new FEGlobalResources(m_grid.triangulation(), 1));
     m_global_resources->on_triangulation_updated();
 
     m_refiner.reset(new MeshRefiner(*m_global_resources));
@@ -54,6 +98,10 @@ void ModelOne::init_grid()
 
 void ModelOne::init_fractions()
 {
+    m_electrons_flow_parameters.reset(new ElectronsFlowParameters);
+    m_electrons_flow_parameters->mu = 5.92;
+    m_electrons_flow_parameters->D = 0.1;
+
     // Creating fractrions pointers
     m_Ne.reset(new Electrons(*m_global_resources));
     m_refiner->add_mesh_based(m_Ne.get());
@@ -83,6 +131,28 @@ void ModelOne::init_fractions()
     m_refiner->add_mesh_based(m_electric_potential.get());
     m_variables_collector->add_pre_step_computator(m_electric_potential.get());
     m_output_maker.add(m_electric_potential.get());
+
+
+    m_electrons_flow_x.reset(new ElectronsFlow(*m_global_resources, 0, *m_electrons_flow_parameters));
+    m_electrons_flow_x->set_electric_field(m_electric_potential->E_x());
+    m_electrons_flow_x->set_electrons_density(*m_Ne);
+    m_refiner->add_mesh_based(m_electrons_flow_x.get());
+    m_variables_collector->add_pre_step_computator(m_electrons_flow_x.get());
+    m_output_maker.add(m_electrons_flow_x.get());
+
+    m_electrons_flow_y.reset(new ElectronsFlow(*m_global_resources, 1, *m_electrons_flow_parameters));
+    m_electrons_flow_y->set_electric_field(m_electric_potential->E_y());
+    m_electrons_flow_y->set_electrons_density(*m_Ne);
+    m_refiner->add_mesh_based(m_electrons_flow_y.get());
+    m_variables_collector->add_pre_step_computator(m_electrons_flow_y.get());
+    m_output_maker.add(m_electrons_flow_y.get());
+
+    m_div_J.reset(new Divergence(*m_global_resources, *m_electrons_flow_x, *m_electrons_flow_y, "elec_flow_divergence"));
+    //m_div_J.reset(new Divergence(*m_global_resources, m_electric_potential->E_x(), m_electric_potential->E_y(), "elec_flow_divergence"));
+    m_refiner->add_mesh_based(m_div_J.get());
+    m_variables_collector->add_pre_step_computator(m_div_J.get());
+    m_output_maker.add(m_div_J.get());
+
 /*
     m_heat_power_2.reset(new HeatPower (*m_global_resources, m_Ne->values(), m_electric_potential->values(), m_Ne->parameters.mu_e));
     m_refiner->add_mesh_based(m_heat_power_2.get());
@@ -203,20 +273,6 @@ void ModelOne::init_fractions()
         }
     ), false);
 
-    add_secondary(m_k_5, new SecondaryFunction("k5",
-        [this](dealii::types::global_dof_index i, double)
-        {
-            double td = (*m_Td)[i];
-            if (td < 400)
-            {
-                return pow(10, -14.1542-305.32/td /*+ 815.6/(pow(td, 2))*/); // MODEL FAILS with this parts
-            } else {
-                return pow(10, -13.4256-767.97/td /*+ 78082.8/(pow(td, 2))*/); // MODEL FAILS with this parts
-            }
-        }
-    ), false);
-
-
     add_secondary(m_k_6, new SecondaryFunction("k6",
         [this](dealii::types::global_dof_index i, double)
         {
@@ -252,6 +308,7 @@ void ModelOne::init_fractions()
             {
                 return pow(10, -13.78-140.8/td);
             } else if (td < 300) {
+                return pow(10, -14.31-87.8/td);
                 return pow(10, -14.31-87.8/td);
             } else {
                 return pow(10, -14.6);
@@ -474,7 +531,8 @@ void ModelOne::init_fractions()
     // Equations
     // Ne
     (*m_Ne)
-         .add_source(1.0, *m_k_6, *m_N_2, *m_Ne)
+         .add_source(-1.0, *m_div_J)
+/*         .add_source(1.0, *m_k_6, *m_N_2, *m_Ne)
          .add_source(1.0, *m_k_7, *m_O_2, *m_Ne)
          .add_source(-1.0, *m_k_10, *m_O_2, *m_Ne)
          .add_source(-1.0, *m_k_11, *m_O_2, *m_O_2, *m_Ne)
@@ -482,13 +540,17 @@ void ModelOne::init_fractions()
          .add_source(1.0, *m_k_13, *m_N_2, *m_O_minus)
          .add_source(1.0, *m_k_14, *m_M, *m_O_2_minus)
          .add_source(1.0, *m_k_15, *m_O, *m_O_3_minus)
-         .add_source(-1.0, *m_beta_ep, *m_Ne, *m_N_p)
-         .add_source(2.0e-18, *m_O_2) // cosmic rays ionization - ???
+         .add_source(-1.0, *m_beta_ep, *m_Ne, *m_N_p)*/
+         //.add_source(2.0e-18, *m_O_2) // cosmic rays ionization - ???
     ;
 
-    double initial_Ne = 0.0;//1e10;
+    double initial_Ne = 1e10;
 
-    *m_Ne = initial_Ne;
+    dealii::VectorTools::interpolate(m_global_resources->dof_handler(), NeInitialFunction(), m_Ne->values_w());
+
+    //m_Ne->apply_boundary_to_concentration();
+
+    //*m_Ne = initial_Ne;
     //assign_test_initial_values();
 
 
@@ -566,10 +628,11 @@ void ModelOne::init_fractions()
         .add_source(-1.0, *m_beta_np, *m_O_2_minus, *m_N_p)
         .add_source(-1.0, *m_beta_np, *m_O_3_minus, *m_N_p)
         .add_source(-1.0, *m_beta_np, *m_O_4_minus, *m_N_p)
-        .add_source(2.0e-18, *m_O_2) // cosmic rays ionization - ???
+        //.add_source(2.0e-18, *m_O_2) // cosmic rays ionization - ???
     ;
 
-    *m_N_p = initial_Ne;
+    //*m_N_p = initial_Ne;
+    dealii::VectorTools::interpolate(m_global_resources->dof_handler(), NeInitialFunction(), m_N_p->values_w());
 
     // u
     (*m_u)
@@ -664,13 +727,13 @@ void ModelOne::init_fractions()
     *m_T = initial_T;
 
     std::cout << "   Fractions equations initialized" << std::endl;
-
+/*
     m_electric_potential->add_charge(m_Ne->values(), - Consts::e);
     m_electric_potential->add_charge(m_O_minus->values(), -Consts::e);
     m_electric_potential->add_charge(m_O_2_minus->values(), -Consts::e);
     m_electric_potential->add_charge(m_O_3_minus->values(), -Consts::e);
     m_electric_potential->add_charge(m_O_4_minus->values(), -Consts::e);
-    m_electric_potential->add_charge(m_N_p->values(), Consts::e);
+    m_electric_potential->add_charge(m_N_p->values(), Consts::e);*/
 
     m_Ne->set_electric_field(m_electric_potential->E_x(), m_electric_potential->E_y(), m_electric_potential->total_chagre());
 
@@ -710,7 +773,7 @@ void ModelOne::run()
     //return 0.0;
 
     double t = 0;
-    double dt = 1e-11;
+    double dt = 1e-13;
     double last_output_t = t;
 
     for(int i = 0; !m_interrupt; i++)
@@ -720,7 +783,8 @@ void ModelOne::run()
         */
         std::cout << "# Number of dofs: " << m_global_resources->n_dofs() << std::endl;
         double t_new = stepper.iterate(*m_variables_collector, t, dt);
-        m_refiner->do_refine(m_Ne->values());
+        //m_Ne->apply_boundary_to_concentration();
+        //m_refiner->do_refine(m_Ne->values());
         dt = t_new - t;
         t = t_new;
 /*
@@ -739,7 +803,7 @@ void ModelOne::run()
         t = t_new;
         std::cout << "dt = " << dt << std::endl;
 */
-//        if (t - last_output_t >= 1e-10 || i == 0)
+        if (t - last_output_t >= 1e-11 || i == 0)
         {
             const auto fname = make_output_filename(t);
             std::cout << "Writing " << fname << std::endl;

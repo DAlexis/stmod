@@ -5,17 +5,17 @@
 
 #include <string>
 
-class Variable
+class ScalarVariable
 {
 public:
-    Variable(const std::string& name) : m_name(name) { }
+    ScalarVariable(const std::string& name) : m_name(name) { }
     virtual dealii::Vector<double>& values_w() = 0;
     virtual const dealii::Vector<double>& values() const
     {
-        return const_cast<Variable*>(this)->values_w();
+        return const_cast<ScalarVariable*>(this)->values_w();
     }
 
-    virtual ~Variable() = default;
+    virtual ~ScalarVariable() = default;
 
     const std::string& name() const { return m_name; }
 
@@ -25,7 +25,7 @@ public:
 
     operator const dealii::Vector<double>& () { return values(); }
 
-    Variable& operator=(double value) { values_w() = value; return *this; }
+    ScalarVariable& operator=(double value) { values_w() = value; return *this; }
 
 protected:
     const std::string m_name;

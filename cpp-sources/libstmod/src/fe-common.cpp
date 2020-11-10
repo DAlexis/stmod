@@ -6,6 +6,7 @@
 #include <deal.II/base/quadrature_lib.h>
 
 #include <iostream>
+#include <stdexcept>
 
 using namespace dealii;
 
@@ -43,6 +44,13 @@ FEGlobalResources::FEGlobalResources(dealii::Triangulation<2>& triangulation, un
         }
     );
 
+    m_inverse_mass_matrix.set_initializer(
+        [this](dealii::SparseDirectUMFPACK& inverse_matrix)
+        {
+            inverse_matrix.initialize(mass_matrix());
+        }
+    );
+
     m_grad_phi_i_grad_phi_j_dot_r_phi_k.set_initializer(
         [this](SparseTensor3& tensor)
         {
@@ -51,6 +59,22 @@ FEGlobalResources::FEGlobalResources(dealii::Triangulation<2>& triangulation, un
             create_grad_phi_i_grad_phi_j_dot_r_phi_k(
                     m_dof_handler,
                     tensor);
+        }
+    );
+
+    r_grad_phi_i_0_phi_j.set_initializer(
+        [this](dealii::SparseMatrix<double>& matrix)
+        {
+            matrix.reinit(m_sparsity_pattern);
+            create_r_grad_phi_i_comp_phi_j_axial(m_dof_handler, matrix, 0);
+        }
+    );
+
+    r_grad_phi_i_1_phi_j.set_initializer(
+        [this](dealii::SparseMatrix<double>& matrix)
+        {
+            matrix.reinit(m_sparsity_pattern);
+            create_r_grad_phi_i_comp_phi_j_axial(m_dof_handler, matrix, 1);
         }
     );
 }
@@ -125,9 +149,25 @@ const dealii::SparseMatrix<double>& FEGlobalResources::laplace_matrix() const
     return m_laplace_matrix;
 }
 
+const dealii::SparseMatrix<double>& FEGlobalResources::r_grad_phi_i_comp_phi_j(size_t component) const
+{
+    if (component == 0)
+        return r_grad_phi_i_0_phi_j;
+
+    if (component == 1)
+        return r_grad_phi_i_1_phi_j;
+
+    throw std::invalid_argument("FEGlobalResources::r_grad_phi_i_comp_phi_j component should be 0 or 1");
+}
+
 const SparseTensor3& FEGlobalResources::grad_phi_i_grad_phi_j_dot_r_phi_k() const
 {
     return m_grad_phi_i_grad_phi_j_dot_r_phi_k;
+}
+
+const dealii::SparseDirectUMFPACK& FEGlobalResources::inverse_mass_matrix() const
+{
+    return m_inverse_mass_matrix;
 }
 
 void FEGlobalResources::add_subscriber(IFEGlobalResourcesUser* subscriber)

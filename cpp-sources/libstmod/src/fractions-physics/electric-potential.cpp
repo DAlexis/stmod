@@ -17,7 +17,7 @@ using namespace dealii;
 const std::string ElectricPotential::m_name = "Electric_potential";
 
 ElectricPotential::ElectricPotential(const FEGlobalResources& fe_res) :
-    Variable(m_name), m_fe_global_res(fe_res), m_electric_field_sampler(m_fe_global_res.dof_handler())
+    ScalarVariable(m_name), m_fe_global_res(fe_res), m_electric_field_sampler(m_fe_global_res.dof_handler())
 {
     //m_fe_res.set_boundary_cond_gen([this](auto & constraints) { add_boundary_conditions(constraints); });
 }
@@ -27,8 +27,6 @@ void ElectricPotential::init_mesh_dependent(const dealii::DoFHandler<2>& dof_han
     SecondaryValue::init_mesh_dependent(dof_handler);
     m_system_rhs.reinit(m_fe_global_res.dof_handler().n_dofs());
     m_total_charge.reinit(m_fe_global_res.dof_handler().n_dofs());
-
-    m_E_vector.resize(m_fe_global_res.dof_handler().n_dofs());
 
     m_Ex_rhs.reinit(m_fe_global_res.dof_handler().n_dofs());
     m_Ey_rhs.reinit(m_fe_global_res.dof_handler().n_dofs());
@@ -105,11 +103,6 @@ void ElectricPotential::set_electric_parameters(const ElectricParameters& electr
     m_electric_parameters = electric_parameters;
 }
 
-const std::vector<Tensor<1, 2>>& ElectricPotential::E_vector()
-{
-    return m_E_vector;
-}
-
 const dealii::Vector<double>& ElectricPotential::E_scalar()
 {
     return m_E_scalar;
@@ -142,11 +135,13 @@ void ElectricPotential::create_e_field()
 
     m_E_x_rhs_matrix.vmult(m_Ex_rhs, m_value);
     m_mass_matrix_inverse.vmult(m_E_x, m_Ex_rhs);
-    m_fe_global_res.constraints().distribute(m_Ex_rhs);
+    m_fe_global_res.constraints().distribute(m_E_x);
+    m_E_x *= -1.0;
 
     m_E_y_rhs_matrix.vmult(m_Ey_rhs, m_value);
     m_mass_matrix_inverse.vmult(m_E_y, m_Ey_rhs);
-    m_fe_global_res.constraints().distribute(m_Ey_rhs);
+    m_fe_global_res.constraints().distribute(m_E_x);
+    m_E_y *= -1.0;
 
     for (unsigned int i = 0; i < m_E_scalar.size(); i++)
     {

@@ -9,8 +9,16 @@
 #include <deal.II/lac/affine_constraints.h>
 #include <deal.II/base/quadrature_lib.h>
 
-constexpr static double default_r_epsilon = 1e-6;
+constexpr static double default_r_epsilon = 1e-5;
 //constexpr static double default_r_epsilon = 0;
+
+void create_E_psi_psi_matrix(
+        const dealii::Vector<double>& E,
+        const dealii::DoFHandler<2, 2>& dof_handler,
+        dealii::SparseMatrix<double> &sparse_matrix,
+        const dealii::AffineConstraints<double> & constraints = dealii::AffineConstraints<double>(),
+        const dealii::Quadrature<2> & quadrature = dealii::QGauss<2>(/*degree = */ 3),
+        double r_epsilon = default_r_epsilon);
 
 void create_E_grad_psi_psi_matrix_axial(
         double Ex, double Ey,

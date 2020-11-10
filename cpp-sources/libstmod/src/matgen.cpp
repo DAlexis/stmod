@@ -3,9 +3,71 @@
 #include <deal.II/base/quadrature_lib.h>
 #include <deal.II/fe/fe_values.h>
 
-//#define DEBUG_NO_AXIAL
+#define DEBUG_NO_AXIAL
 
 using namespace dealii;
+
+void create_E_psi_psi_matrix(
+        const dealii::Vector<double>& E,
+        const dealii::DoFHandler<2, 2>& dof_handler,
+        dealii::SparseMatrix<double> &sparse_matrix,
+        const dealii::AffineConstraints<double> & constraints,
+        const dealii::Quadrature<2> & quadrature,
+        double r_epsilon)
+{
+    auto &fe = dof_handler.get_fe();
+
+    FEValues<2, 2> fe_values(fe, quadrature,
+                          update_values | update_gradients |
+                          update_quadrature_points | update_JxW_values | update_jacobians);
+
+    const unsigned int dofs_per_cell = fe.dofs_per_cell;
+    const unsigned int n_q_points    = quadrature.size();
+    FullMatrix<double> cell_matrix(dofs_per_cell, dofs_per_cell);
+    std::vector<types::global_dof_index> local_dof_indices(dofs_per_cell);
+
+    for (const auto &cell : dof_handler.active_cell_iterators())
+    {
+        cell_matrix = 0;
+        fe_values.reinit(cell);
+        cell->get_dof_indices(local_dof_indices);
+        for (unsigned int q_index = 0; q_index < n_q_points; ++q_index)
+        {
+            const auto x_q = fe_values.quadrature_point(q_index);
+            const double r = x_q[0];
+
+            // First calculating total E field in current quadrature point
+            double E_total = 0;
+
+            for (unsigned int k = 0; k < dofs_per_cell; ++k) // Iterating over components of E in this cell
+            {
+                auto psi_k = fe_values.shape_value(k, q_index);
+                E_total += E[local_dof_indices[k]] * psi_k;
+            }
+
+            // Then contributing this quadrature's point integral part to cell_matrix
+            for (unsigned int i = 0; i < dofs_per_cell; ++i)
+            {
+                for (unsigned int j = 0; j < dofs_per_cell; ++j)
+                {
+                    auto psi_i = fe_values.shape_value(i, q_index);
+                    double psi_j = fe_values.shape_value(j, q_index);
+
+                    cell_matrix(i, j) += (
+                                E_total * psi_i * psi_j
+#ifndef DEBUG_NO_AXIAL
+                                    * (r + r_epsilon)
+#endif
+                            ) * fe_values.JxW(q_index);
+
+                }
+            }
+        }
+
+        constraints.distribute_local_to_global(cell_matrix, local_dof_indices, sparse_matrix);
+    }
+}
+
 
 void create_E_grad_psi_psi_matrix_axial(
         double Ex, double Ey,
@@ -170,7 +232,7 @@ void create_E_psi_grad_psi_matrix_axial(
 
 
                     cell_matrix(i, j) += (
-                                (-Ex_total * grad_psi_i[0] + -Ey_total * grad_psi_i[1])
+                                (Ex_total * grad_psi_i[0] + Ey_total * grad_psi_i[1])
                                  * psi_j
 #ifndef DEBUG_NO_AXIAL
                                     * (r + r_epsilon)

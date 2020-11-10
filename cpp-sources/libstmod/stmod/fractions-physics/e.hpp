@@ -14,20 +14,12 @@
 #include <vector>
 #include <tuple>
 
-struct ElectronsConstants
-{
-    double D_e = 0.1; //   m^2 c^-1      Diffusion coefficient
-    double mu_e = 5.92; // m^2 V^-1 c^-1 Mobility
-    double nu_i; // Ionization frequency
-    double nu_a_1, nu_a_23; // Single-particle and double-particle attachment frequency
-    double nu_d_u1, nu_d_u2, nu_d_s; // Electron detachment frequencies
-};
-
 struct ElectronsParameters
 {
-    double mu_e = -5.92; // m^2 V^-1 s^-1
+    double mu_e = 5.92; // m^2 V^-1 s^-1
     //double mu_e = 5.92e-3; // m^2 V^-1 s^-1
     //double mu_e = 0.0; // m^2 V^-1 s^-1
+    //double D_e = 0.1; // m^2 s^-1
     double D_e = 0.1; // m^2 s^-1
     //double D_e = 1; // m^2 s^-1
     //double D_e = 0.0; // m^2 s^-1
@@ -44,6 +36,8 @@ public:
     void compute_derivatives(double t) override;
 
     void set_electric_field(const dealii::Vector<double>& Ex, const dealii::Vector<double>& Ey, const dealii::Vector<double>& total_charge);
+
+    void apply_boundary_to_concentration();
 
     const dealii::Vector<double>& get_implicit_delta(double dt, double theta = 0.5);
 

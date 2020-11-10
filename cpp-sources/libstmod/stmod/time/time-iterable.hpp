@@ -5,7 +5,7 @@
 
 #include <deal.II/lac/vector.h>
 
-class VariableWithDerivative : public virtual Variable
+class VariableWithDerivative : public virtual ScalarVariable
 {
 public:
     virtual const dealii::Vector<double>& derivatives() const = 0;
@@ -22,7 +22,7 @@ public:
     virtual ~IPreStepComputer() = default;
 };
 
-class ImplicitSteppable : public virtual Variable
+class ImplicitSteppable : public virtual ScalarVariable
 {
 public:
     virtual const dealii::Vector<double>& get_implicit_delta(double dt, double theta = 0.5) = 0;

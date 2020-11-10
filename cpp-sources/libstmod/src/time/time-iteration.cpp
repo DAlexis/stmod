@@ -223,8 +223,8 @@ void StmodTimeStepper::init()
 
     const double coarsen_param = 1.1;
     const double refine_param  = 0.9;
-    const double min_delta     = 1e-11;
-    const double max_delta     = 1e-9;
+    const double min_delta     = 1e-13;
+    const double max_delta     = 1e-11;
 
     /*const double refine_tol    = 1e-5;
     const double coarsen_tol   = 1e-7;*/
@@ -242,6 +242,8 @@ void StmodTimeStepper::init()
         refine_tol,
         coarsen_tol
     );
+
+    m_implicit_stepper = std::make_shared<TimeStepping::ImplicitRungeKutta<Vector<double>>>(TimeStepping::BACKWARD_EULER);
 }
 
 
@@ -271,6 +273,7 @@ double StmodTimeStepper::iterate(VariablesCollector& collector, double t, double
     {
         resulting_t = m_embedded_stepper->evolve_one_time_step(
         //resulting_t = m_stepper->evolve_one_time_step(
+        //resulting_t = m_implicit_stepper->evolve_one_time_step(
             [&collector, dt](const double time, const Vector<double> &y)
             {
                 std::cout << "t = " << time << " | " << std::flush;

@@ -40,7 +40,11 @@ public:
 
     const dealii::SparseMatrix<double>& mass_matrix() const;
     const dealii::SparseMatrix<double>& laplace_matrix() const;
+    const dealii::SparseMatrix<double>& r_grad_phi_i_comp_phi_j(size_t component) const;
+
     const SparseTensor3& grad_phi_i_grad_phi_j_dot_r_phi_k() const;
+
+    const dealii::SparseDirectUMFPACK& inverse_mass_matrix() const;
 
     void add_subscriber(IFEGlobalResourcesUser* subscriber);
 
@@ -57,6 +61,9 @@ private:
     LazyInitializerCleaner m_cleaner;
     LazyInitializer<dealii::SparseMatrix<double>> m_laplace_matrix{m_cleaner};
     LazyInitializer<dealii::SparseMatrix<double>> m_mass_matrix{m_cleaner};
+    LazyInitializer<dealii::SparseMatrix<double>> r_grad_phi_i_0_phi_j{m_cleaner};
+    LazyInitializer<dealii::SparseMatrix<double>> r_grad_phi_i_1_phi_j{m_cleaner};
+    LazyInitializer<dealii::SparseDirectUMFPACK> m_inverse_mass_matrix{m_cleaner};
 
     LazyInitializer<SparseTensor3> m_grad_phi_i_grad_phi_j_dot_r_phi_k{m_cleaner};
 };

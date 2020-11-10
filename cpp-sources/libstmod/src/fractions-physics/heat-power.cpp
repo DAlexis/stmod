@@ -6,7 +6,7 @@
 #include <tbb/tbb.h>
 
 HeatPower::HeatPower(const FEGlobalResources& fe_res, const dealii::Vector<double>& concentration, const dealii::Vector<double>& potential, double mu) :
-    Variable("heat_power_2"), m_fe_global_res(fe_res), m_concentration(concentration), m_potential(potential), m_mu(mu)
+    ScalarVariable("heat_power_2"), m_fe_global_res(fe_res), m_concentration(concentration), m_potential(potential), m_mu(mu)
 {
 }
 

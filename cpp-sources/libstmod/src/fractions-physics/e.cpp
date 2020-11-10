@@ -14,7 +14,7 @@ using namespace dealii;
 const std::string Electrons::m_names[2] = {"Electrons_density", "Electrons_density_derivative"};
 
 Electrons::Electrons(const FEGlobalResources& fe_global_res) :
-    Variable(m_names[0]), Fraction(m_names[0]), m_fe_global_res(fe_global_res)
+    ScalarVariable(m_names[0]), Fraction(m_names[0]), m_fe_global_res(fe_global_res)
 {
 }
 
@@ -25,6 +25,52 @@ void Electrons::set_electric_field(const dealii::Vector<double>& Ex, const deali
     m_total_charge = &total_charge;
 }
 
+const dealii::Vector<double>& Electrons::get_implicit_delta(double dt, double theta)
+{
+    m_implicit_delta = 0;
+    return m_implicit_delta;
+    /*
+    // Creating implicit system matrix
+
+    m_tmp_matrix = 0;
+    create_E_psi_grad_psi_matrix_axial(
+            //10/0.002, 10/0.002,
+            *m_Ex,
+            *m_Ey,
+            m_fe_global_res.dof_handler(),
+            m_tmp_matrix);
+
+    m_implicit_system_matrix.copy_from(m_fe_global_res.mass_matrix());
+    m_implicit_system_matrix.add(-dt*theta*parameters.mu_e, m_tmp_matrix);
+    m_implicit_system_matrix.add(dt*theta*parameters.D_e, m_fe_global_res.laplace_matrix());
+
+    // Creating implicit RHS
+    m_implicit_rhs_matrix = 0;
+    m_implicit_rhs_matrix.add(dt*parameters.mu_e, m_tmp_matrix);
+    m_implicit_rhs_matrix.add(-dt*parameters.D_e, m_fe_global_res.laplace_matrix());
+
+    m_implicit_rhs = 0;
+    m_implicit_rhs_matrix.vmult(m_implicit_rhs, m_concentration);
+
+
+    // Preparing to solve system
+    m_implicit_delta = 0;
+    m_fe_global_res.constraints().condense(m_implicit_system_matrix, m_implicit_rhs);
+
+    // Applying boundary conditions
+    MatrixTools::apply_boundary_values(m_boundary_values,
+                                     m_implicit_system_matrix,
+                                     m_implicit_delta,
+                                     m_implicit_rhs);
+
+    // Creating inverted matrix
+    m_implicit_system_reversed.initialize(m_implicit_system_matrix);
+    m_implicit_system_reversed.vmult(m_implicit_delta, m_implicit_rhs);
+
+    m_fe_global_res.constraints().distribute(m_implicit_delta);
+    return m_implicit_delta;*/
+}
+/*
 const dealii::Vector<double>& Electrons::get_implicit_delta(double dt, double theta)
 {
     // Creating implicit system matrix
@@ -72,11 +118,11 @@ const dealii::Vector<double>& Electrons::get_implicit_delta(double dt, double th
     m_implicit_system_reversed.vmult(m_implicit_delta, m_implicit_rhs);
     m_fe_global_res.constraints().distribute(m_implicit_delta);
     return m_implicit_delta;
-}
+}*/
 
 Fraction& Electrons::operator=(double value)
 {
-    Variable::operator =(value);
+    ScalarVariable::operator =(value);
     m_fe_global_res.constraints().distribute(values_w());
     return *this;
 }
@@ -98,10 +144,11 @@ void Electrons::init_mesh_dependent(const dealii::DoFHandler<2>& dof_handler)
     // Creating bounndary values map
     m_boundary_values.clear();
     // Boundary conditions for Delta is zero
-    /*VectorTools::interpolate_boundary_values(m_fe_global_res.dof_handler(),
+
+    VectorTools::interpolate_boundary_values(m_fe_global_res.dof_handler(),
                                              BoundaryAssigner::top_and_needle,
                                              Functions::ZeroFunction<2>(),
-                                             m_boundary_values);*/
+                                             m_boundary_values);
 
     VectorTools::interpolate_boundary_values(m_fe_global_res.dof_handler(),
                                              BoundaryAssigner::bottom,
@@ -117,9 +164,20 @@ void Electrons::init_mesh_dependent(const dealii::DoFHandler<2>& dof_handler)
 void Electrons::compute_derivatives(double t)
 {
     Fraction::compute_derivatives(t);
-/*    m_tmp = m_concentration; // Charge of electrons
-    m_tmp.scale(*m_total_charge); // * total charge. Negative if only electrons in the system
-    m_tmp *= -parameters.mu_e;
-    m_derivative += m_tmp;
-  */
+    /*
+    m_tmp = m_concentration;
+    m_tmp.scale(*m_total_charge);
+    m_tmp *= parameters.mu_e;
+    m_derivative += m_tmp;*/
+}
+
+void Electrons::apply_boundary_to_concentration()
+{
+    m_implicit_system_matrix = 0;
+    m_tmp = 0;
+    MatrixTools::apply_boundary_values(m_boundary_values,
+                                     m_implicit_system_matrix,
+                                     m_concentration,
+                                     m_tmp);
+
 }

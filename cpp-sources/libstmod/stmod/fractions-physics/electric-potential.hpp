@@ -21,7 +21,7 @@ public:
     // IMeshBased
     void init_mesh_dependent(const dealii::DoFHandler<2>& dof_handler) override;
 
-    // // IPreStepJob
+    // IPreStepComputer
     void compute(double t) override;
 
     void add_charge(const dealii::Vector<double>& charge_vector, double mul = 1.0);
@@ -66,7 +66,6 @@ private:
     dealii::Vector<double> m_Ey_rhs;
 
     dealii::Vector<double> m_E_scalar;
-    std::vector<dealii::Tensor<1, 2>> m_E_vector;
 
     FESampler m_electric_field_sampler;
 

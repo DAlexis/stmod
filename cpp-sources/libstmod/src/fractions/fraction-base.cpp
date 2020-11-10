@@ -30,7 +30,7 @@ size_t SecondaryValue::output_values_count() const
 }
 
 SecondaryConstant::SecondaryConstant(const std::string& name, double value) :
-    Variable(name), m_current_scalar_value(value)
+    ScalarVariable(name), m_current_scalar_value(value)
 {
 
 }
@@ -53,7 +53,7 @@ SecondaryConstant::operator double() const
 }
 
 SecondaryFunction::SecondaryFunction(const std::string& name, Lambda func) :
-    Variable(name), m_func(func)
+    ScalarVariable(name), m_func(func)
 {
 }
 
