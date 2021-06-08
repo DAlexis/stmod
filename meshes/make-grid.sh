@@ -2,4 +2,4 @@
 
 set -e
 
-gmsh -2 -algo pack spheric-needles-1.geo -o spheric-needles-1.msh
+gmsh -2 spheric-needles-1.geo -o spheric-needles-1.msh

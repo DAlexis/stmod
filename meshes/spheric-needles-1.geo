@@ -23,11 +23,11 @@ Point(1) = {0.0, 0, 0, needle_rad};
 
 
 // Top needle
-Point(6) = {0, cyl_height-needle_len-needle_rad, 0, needle_rad / 12.0};
-Point(7) = {0, cyl_height-needle_len, 0, needle_rad / 12.0};
-Point(8) = {needle_rad, cyl_height-needle_len, 0, needle_rad / 12.0};
+Point(6) = {0, cyl_height-needle_len-needle_rad, 0, needle_rad / 6.0};
+Point(7) = {0, cyl_height-needle_len, 0, needle_rad / 6.0};
+Point(8) = {needle_rad, cyl_height-needle_len, 0, needle_rad / 6.0};
 //Point(9) = {needle_rad, cyl_height, 0, needle_rad / 2.0};
-Point(9) = {needle_rad, cyl_height, 0, cyl_rad / 7.0};
+Point(9) = {needle_rad, cyl_height, 0, cyl_rad / 10.0};
 
 // Contour
 Point(10) = {cyl_rad, cyl_height, 0, cyl_rad / 7.0};
@@ -47,11 +47,11 @@ Plane Surface(1) = {1};
 Physical Surface(2) = {1};
 
 // some parameters for the meshing:
-Mesh.Algorithm = 1;
+Mesh.Algorithm = 4;
 Mesh.RecombineAll = 1;
 Mesh.CharacteristicLengthFactor = 1.0;
 Mesh.SubdivisionAlgorithm = 1;
-Mesh.Smoothing = 200;
+Mesh.Smoothing = 1;
 Show "*";
 
 //Recombine Surface {1};

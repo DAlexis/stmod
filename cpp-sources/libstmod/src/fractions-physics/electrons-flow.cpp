@@ -44,7 +44,7 @@ void ElectronsFlow::compute(double)
     m_fe_global_res.inverse_mass_matrix().vmult(m_value, m_rhs);
     m_value /= -m_flow_parameters.D;
 
-    // Frifting flow
+    // Drifting flow
 
     for (dealii::Vector<double>::size_type i = 0; i < m_value.size(); i++)
     {

@@ -90,24 +90,32 @@ void VariablesCollector::pull_derivatives()
 void VariablesCollector::compute_in_places(double t)
 {
     //std::cout << "VariablesCollector::compute for t = " << t << std::endl;
+/*
+    tbb::parallel_for(
+        (size_t) 0, m_pre_step_jobs.size(),
+        [this, t]( size_t l )
+        {
+            m_pre_step_jobs[l]->compute(t);
+        }
+    );*/
 
     for (auto pre_step : m_pre_step_jobs)
     {
         pre_step->compute(t);
     }
-
+/*
     tbb::parallel_for(
         (size_t) 0, m_variables.size(),
         [this, t]( size_t l )
         {
             m_variables[l]->compute_derivatives(t);
         }
-    );
-/*
+    );*/
+
     for (auto steppable : m_variables)
     {
         steppable->compute_derivatives(t);
-    }*/
+    }
 }
 
 void VariablesCollector::implicit_deltas_collect(double t, double dt, double theta)
@@ -223,14 +231,14 @@ void StmodTimeStepper::init()
 
     const double coarsen_param = 1.1;
     const double refine_param  = 0.9;
-    const double min_delta     = 1e-13;
-    const double max_delta     = 1e-11;
+    const double min_delta     = 1e-14;
+    const double max_delta     = 1e-12;
 
     /*const double refine_tol    = 1e-5;
     const double coarsen_tol   = 1e-7;*/
 
-    const double refine_tol    = 1e-3;
-    const double coarsen_tol   = 1e-5;
+    const double refine_tol    = 1e-2;
+    const double coarsen_tol   = 1e-3;
 
     m_embedded_stepper = std::make_shared<TimeStepping::EmbeddedExplicitRungeKutta<Vector<double>>>(
         //TimeStepping::FORWARD_EULER,
@@ -287,7 +295,8 @@ double StmodTimeStepper::iterate(VariablesCollector& collector, double t, double
         collector.compute_in_places(t);
         resulting_t += dt;
     }
-
+    double actual_dt = resulting_t - t;
+/*
     std::cout << "done" << std::endl;
 
     // Saving explicit time step results
@@ -297,7 +306,7 @@ double StmodTimeStepper::iterate(VariablesCollector& collector, double t, double
     // Restoring old values to compute implicit part
     collector.push_values(m_on_explicit_begin);
     // Computing implicit deltas based on actual dt
-    double actual_dt = resulting_t - t;
+
 
     std::cout << "   Implicit step on t = " << t << " with dt = " << actual_dt << "..." << std::endl;
     collector.implicit_deltas_collect(t, actual_dt, 0.5);
@@ -306,7 +315,7 @@ double StmodTimeStepper::iterate(VariablesCollector& collector, double t, double
     collector.push_values(m_on_explicit_end);
     // and adding deltas from implicit
     collector.implicit_deltas_add();
-
+*/
     collector.pull_values_to_storage();
     remove_negative(collector.stored_values());
     collector.push_values(collector.stored_values());

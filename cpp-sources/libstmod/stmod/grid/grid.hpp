@@ -57,5 +57,4 @@ private:
     constexpr static int near_needle_manifold_id = 2;
 };
 
-
 #endif // MESH_HPP_INCLUDED

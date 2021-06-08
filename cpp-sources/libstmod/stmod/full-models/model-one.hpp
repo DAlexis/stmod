@@ -38,8 +38,10 @@ private:
     template<typename UniqPtrType, typename PtrType>
     void add_secondary(std::unique_ptr<UniqPtrType>& uniq_ptr, PtrType* value, bool need_output = true)
     {
+        if (uniq_ptr)
+            throw std::runtime_error("Secondary value already initialized");
         uniq_ptr.reset(value);
-        register_secondary(uniq_ptr.get());
+        register_secondary(uniq_ptr.get(), need_output);
     }
     void register_secondary(SecondaryValue* value, bool need_output = true);
     void add_fraction(std::unique_ptr<Fraction>& uniq_ptr, Fraction* fraction);
@@ -65,6 +67,18 @@ private:
     std::unique_ptr<Gradient> m_E_x;
     std::unique_ptr<Gradient> m_E_y;
     std::unique_ptr<L2Norm> m_E_norm;
+
+    std::unique_ptr<Gradient> m_electrons_diffusion_flow_x;
+    std::unique_ptr<Gradient> m_electrons_diffusion_flow_y;
+
+    std::unique_ptr<SecondaryValue> m_electrons_drift_speed;
+    std::unique_ptr<SecondaryValue> m_electrons_drift_flow_x;
+    std::unique_ptr<SecondaryValue> m_electrons_drift_flow_y;
+
+    std::unique_ptr<SecondaryValue> m_total_electrons_flow_x;
+    std::unique_ptr<SecondaryValue> m_total_electrons_flow_y;
+
+    //std::unique_ptr<SecondaryValue> m_electrons_drift_speed;
     std::unique_ptr<ElectronsFlow> m_electrons_flow_x;
     std::unique_ptr<ElectronsFlow> m_electrons_flow_y;
     //std::unique_ptr<HeatPower> m_heat_power_2;
@@ -113,6 +127,19 @@ private:
     std::unique_ptr<SecondaryValue> m_beta_ep;
     std::unique_ptr<SecondaryValue> m_beta_np;
     std::unique_ptr<SecondaryValue> m_Q;
+
+
+    // Debug secondaries
+    std::unique_ptr<SecondaryValue> m_k10_O2_Ne;
+    std::unique_ptr<SecondaryValue> m_k11_O2_O2_Ne;
+    std::unique_ptr<SecondaryValue> m_k12_O2_N2_Ne;
+    std::unique_ptr<SecondaryValue> m_beta_Np_Ne;
+
+    std::unique_ptr<SecondaryValue> m_k6_N2_Ne;
+    std::unique_ptr<SecondaryValue> m_k7_O2_Ne;
+    std::unique_ptr<SecondaryValue> m_k13_N2_O_minus;
+    std::unique_ptr<SecondaryValue> m_k14_M_O_2_minus;
+    std::unique_ptr<SecondaryValue> m_k15_O_O_3_minus;
 
     // Fractions
     std::unique_ptr<Electrons> m_Ne;

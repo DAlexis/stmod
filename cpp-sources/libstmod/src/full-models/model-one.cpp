@@ -13,6 +13,7 @@
 #include "stmod/time/time-iteration.hpp"
 #include "stmod/grid/mesh-refiner.hpp"
 #include "stmod/phys-consts.hpp"
+#include "stmod/utils/symmetry-axis.hpp"
 
 #include "stmod/fe-common.hpp"
 #include "stmod/grid/grid.hpp"
@@ -31,23 +32,15 @@
 #include <fstream>
 #include <sstream>
 
-/* TODO:
- * В данный момент отключены:
- * - источники электронов
- * - источники заряда
- * - аксиальная геометрия
- *
- * То есть запуск просто демонстрирует дрейф и диффузию электронов
- */
-
 class NeInitialFunction : public dealii::Function<2>
 {
 public:
     double value(const dealii::Point<2> &p, const unsigned int component = 0) const override
     {
-        double result = 1e10;
+        double result = 1e15;
         const double y_decay = 0.001;
-        const double y_limit = 0.01475;
+//        const double y_limit = 0.01475;
+        const double y_limit = 0.016;
         if (p[1] < 2 * y_decay && p[1] > y_decay)
         {
             result *= (p[1] - y_decay) / y_decay;
@@ -128,27 +121,15 @@ void ModelOne::init_fractions()
 
     std::cout << "   Fractions added" << std::endl;
 
-    // Creating main secondary functions
+    // Electric field
     add_secondary(m_electric_potential, new ElectricPotential (*m_global_resources));
     add_secondary(m_E_x, new Gradient (*m_global_resources, *m_electric_potential, "E_x", 0, -1.0));
     add_secondary(m_E_y, new Gradient (*m_global_resources, *m_electric_potential, "E_y", 1, -1.0));
     add_secondary(m_E_norm, new L2Norm(*m_E_x, *m_E_y, "E_norm"));
 
 
-    add_secondary(m_electrons_flow_x, new ElectronsFlow(*m_global_resources, *m_Ne, *m_E_x, 0, *m_electrons_flow_parameters));
-    add_secondary(m_electrons_flow_y, new ElectronsFlow(*m_global_resources, *m_Ne, *m_E_y, 1, *m_electrons_flow_parameters));
 
-    add_secondary(m_div_J, new Divergence(*m_global_resources, *m_electrons_flow_x, *m_electrons_flow_y, "elec_flow_divergence"));
-
-    add_secondary(m_heat_power, new SecondaryFunction("heat_power",
-        [this](dealii::types::global_dof_index i, double)
-        {
-            double Ne = m_Ne->values()[i];
-            double E = m_E_norm->values()[i];
-            return 1.6e-19 * (5.92 * Ne) * pow(E, 2);
-        }
-    ));
-
+    // Fundamental components
     add_secondary(m_M, new SecondaryFunction("M",
         [this](dealii::types::global_dof_index i, double)
         {
@@ -190,6 +171,76 @@ void ModelOne::init_fractions()
             } else {
                 return 0.0167 * Td;
             }
+        }
+    ));
+
+    // Electrons movement
+    add_secondary(m_electrons_diffusion_flow_x, new Gradient (*m_global_resources, *m_Ne, "diffusion_flow_x", 0, -1));
+    add_secondary(m_electrons_diffusion_flow_y, new Gradient (*m_global_resources, *m_Ne, "diffusion_flow_y", 1, -1));
+
+    add_secondary(m_electrons_drift_speed, new SecondaryFunction("drift_speed",
+        [this](dealii::types::global_dof_index i, double)
+        {
+            double td = (*m_Td)[i];
+            return 0.25 * pow(td, 0.864) * 1e6 * 1e-2;
+        }
+    ));
+
+    // Electrons drift flow
+    add_secondary(m_electrons_drift_flow_x, new SecondaryFunction("drift_flow_x",
+        [this](dealii::types::global_dof_index i, double)
+        {
+            double v = (*m_electrons_drift_speed)[i];
+            double Ne = (*m_Ne)[i];
+            double Ex = (*m_E_x)[i];
+            double E = (*m_E_norm)[i];
+            return -v * Ne * Ex / E;
+        }
+    ));
+
+    add_secondary(m_electrons_drift_flow_y, new SecondaryFunction("drift_flow_y",
+        [this](dealii::types::global_dof_index i, double)
+        {
+            double v = (*m_electrons_drift_speed)[i];
+            double Ne = (*m_Ne)[i];
+            double Ey = (*m_E_y)[i];
+            double E = (*m_E_norm)[i];
+            return -v * Ne * Ey / E;
+        }
+    ));
+
+    // Electrons total flow
+    add_secondary(m_total_electrons_flow_x, new SecondaryFunction("total_flow_x",
+        [this](dealii::types::global_dof_index i, double)
+        {
+            double drift_x = (*m_electrons_drift_flow_x)[i];
+            double diff_x = (*m_electrons_diffusion_flow_x)[i];
+            return drift_x + diff_x;
+        }
+    ));
+
+    add_secondary(m_total_electrons_flow_y, new SecondaryFunction("total_flow_y",
+        [this](dealii::types::global_dof_index i, double)
+        {
+            double drift_y = (*m_electrons_drift_flow_y)[i];
+            double diff_y = (*m_electrons_diffusion_flow_y)[i];
+            return drift_y + diff_y;
+        }
+    ));
+
+//    add_secondary(m_electrons_flow_x, new ElectronsFlow(*m_global_resources, *m_Ne, *m_E_x, 0, *m_electrons_flow_parameters));
+//    add_secondary(m_electrons_flow_y, new ElectronsFlow(*m_global_resources, *m_Ne, *m_E_y, 1, *m_electrons_flow_parameters));
+
+    //add_secondary(m_div_J, new Divergence(*m_global_resources, *m_electrons_flow_x, *m_electrons_flow_y, "elec_flow_divergence"));
+    add_secondary(m_div_J, new Divergence(*m_global_resources, *m_total_electrons_flow_x, *m_total_electrons_flow_y, "elec_flow_divergence"));
+
+    // Heat power
+    add_secondary(m_heat_power, new SecondaryFunction("heat_power",
+        [this](dealii::types::global_dof_index i, double)
+        {
+            double Ne = m_Ne->values()[i];
+            double E = m_E_norm->values()[i];
+            return 1.6e-19 * (5.92 * Ne) * pow(E, 2);
         }
     ));
 
@@ -495,6 +546,75 @@ void ModelOne::init_fractions()
         }
     ));
 
+
+    // DEBUG SECONDARIES
+    // Negative components
+    add_secondary(m_k10_O2_Ne, new SecondaryFunction("k10_O2_Ne",
+        [this](dealii::types::global_dof_index i, double)
+        {
+            return (*m_k_10)[i] * (*m_O_2)[i] * (*m_Ne)[i];
+        }
+    ));
+
+    add_secondary(m_k11_O2_O2_Ne, new SecondaryFunction("k11_O2_O2_Ne",
+        [this](dealii::types::global_dof_index i, double)
+        {
+            return (*m_k_11)[i] * (*m_O_2)[i] * (*m_O_2)[i] * (*m_Ne)[i];
+        }
+    ));
+
+    add_secondary(m_k12_O2_N2_Ne, new SecondaryFunction("k12_O2_N2_Ne",
+        [this](dealii::types::global_dof_index i, double)
+        {
+            return (*m_k_12)[i] * (*m_O_2)[i] * (*m_N_2)[i] * (*m_Ne)[i];
+        }
+    ));
+
+    add_secondary(m_beta_Np_Ne, new SecondaryFunction("beta_Np_Ne",
+        [this](dealii::types::global_dof_index i, double)
+        {
+            return (*m_beta_np)[i] * (*m_N_p)[i] * (*m_Ne)[i];
+        }
+    ));
+
+
+    // Positive components
+    add_secondary(m_k6_N2_Ne, new SecondaryFunction("k6_N2_Ne",
+        [this](dealii::types::global_dof_index i, double)
+        {
+            return (*m_k_6)[i] * (*m_N_2)[i] * (*m_Ne)[i];
+        }
+    ));
+
+    add_secondary(m_k7_O2_Ne, new SecondaryFunction("k7_O2_Ne",
+        [this](dealii::types::global_dof_index i, double)
+        {
+            return (*m_k_7)[i] * (*m_O_2)[i] * (*m_Ne)[i];
+        }
+    ));
+
+    add_secondary(m_k13_N2_O_minus, new SecondaryFunction("k13_N2_O_minus",
+        [this](dealii::types::global_dof_index i, double)
+        {
+            return (*m_k_13)[i] * (*m_N_2)[i] * (*m_O_minus)[i];
+        }
+    ));
+
+    add_secondary(m_k14_M_O_2_minus, new SecondaryFunction("k14_M_O_2_minus",
+        [this](dealii::types::global_dof_index i, double)
+        {
+            return (*m_k_14)[i] * (*m_M)[i] * (*m_O_2_minus)[i];
+        }
+    ));
+
+    add_secondary(m_k15_O_O_3_minus, new SecondaryFunction("k15_O_O_3_minus",
+        [this](dealii::types::global_dof_index i, double)
+        {
+            return (*m_k_15)[i] * (*m_O)[i] * (*m_O_3_minus)[i];
+        }
+    ));
+
+
     std::cout << "   Secondary values added" << std::endl;
 
     m_refiner->call_on_mesh_refine();
@@ -505,7 +625,7 @@ void ModelOne::init_fractions()
     // Ne
     (*m_Ne)
          .add_source(-1.0, *m_div_J)
-/*         .add_source(1.0, *m_k_6, *m_N_2, *m_Ne)
+         .add_source(1.0, *m_k_6, *m_N_2, *m_Ne)
          .add_source(1.0, *m_k_7, *m_O_2, *m_Ne)
          .add_source(-1.0, *m_k_10, *m_O_2, *m_Ne)
          .add_source(-1.0, *m_k_11, *m_O_2, *m_O_2, *m_Ne)
@@ -513,11 +633,9 @@ void ModelOne::init_fractions()
          .add_source(1.0, *m_k_13, *m_N_2, *m_O_minus)
          .add_source(1.0, *m_k_14, *m_M, *m_O_2_minus)
          .add_source(1.0, *m_k_15, *m_O, *m_O_3_minus)
-         .add_source(-1.0, *m_beta_ep, *m_Ne, *m_N_p)*/
+         .add_source(-1.0, *m_beta_ep, *m_Ne, *m_N_p)
          //.add_source(2.0e-18, *m_O_2) // cosmic rays ionization - ???
     ;
-
-    double initial_Ne = 1e10;
 
     dealii::VectorTools::interpolate(m_global_resources->dof_handler(), NeInitialFunction(), m_Ne->values_w());
 
@@ -700,13 +818,13 @@ void ModelOne::init_fractions()
     *m_T = initial_T;
 
     std::cout << "   Fractions equations initialized" << std::endl;
-/*
+
     m_electric_potential->add_charge(m_Ne->values(), - Consts::e);
     m_electric_potential->add_charge(m_O_minus->values(), -Consts::e);
     m_electric_potential->add_charge(m_O_2_minus->values(), -Consts::e);
     m_electric_potential->add_charge(m_O_3_minus->values(), -Consts::e);
     m_electric_potential->add_charge(m_O_4_minus->values(), -Consts::e);
-    m_electric_potential->add_charge(m_N_p->values(), Consts::e);*/
+    m_electric_potential->add_charge(m_N_p->values(), Consts::e);
 
     //m_Ne->set_electric_field(*m_E_x, *m_E_y, m_electric_potential->total_chagre());
 
@@ -776,6 +894,8 @@ void ModelOne::run()
         t = t_new;
         std::cout << "dt = " << dt << std::endl;
 */
+        AxisRegularizer axis_regularizer(m_grid);
+        axis_regularizer.regularize(m_Ne->values_w(), *m_global_resources);
         if (t - last_output_t >= 1e-11 || i == 0)
         {
             const auto fname = make_output_filename(t);

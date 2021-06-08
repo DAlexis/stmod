@@ -24,6 +24,7 @@ set(LIB_SOURCE
     ${PROJECT_SOURCE_DIR}/src/full-models/model-one.cpp
     ${PROJECT_SOURCE_DIR}/src/grid/grid.cpp
     ${PROJECT_SOURCE_DIR}/src/grid/mesh-refiner.cpp
+    ${PROJECT_SOURCE_DIR}/src/utils/symmetry-axis.cpp
     ${PROJECT_SOURCE_DIR}/src/matgen.cpp
     ${PROJECT_SOURCE_DIR}/src/output/output.cpp
     ${PROJECT_SOURCE_DIR}/src/phys-consts.cpp
@@ -50,6 +51,7 @@ set(LIB_HPP
     ${PROJECT_SOURCE_DIR}/stmod/grid/grid.hpp
     ${PROJECT_SOURCE_DIR}/stmod/grid/mesh-based.hpp
     ${PROJECT_SOURCE_DIR}/stmod/grid/mesh-refiner.hpp
+    ${PROJECT_SOURCE_DIR}/stmod/utils/symmetry-axis.hpp
     ${PROJECT_SOURCE_DIR}/stmod/matgen.hpp
     ${PROJECT_SOURCE_DIR}/stmod/output/output.hpp
     ${PROJECT_SOURCE_DIR}/stmod/output/output-provider.hpp

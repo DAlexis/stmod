@@ -6,11 +6,11 @@ Gradient::Gradient(
         const std::string& name,
         size_t component,
         double multiplier) :
+    ScalarVariable(name),
     m_fe_global_res(fe_res),
     m_field(field),
     m_component(component),
-    m_multiplier(multiplier),
-    ScalarVariable(name)
+    m_multiplier(multiplier)
 {
 }
 

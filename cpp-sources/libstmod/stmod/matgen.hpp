@@ -9,7 +9,7 @@
 #include <deal.II/lac/affine_constraints.h>
 #include <deal.II/base/quadrature_lib.h>
 
-constexpr static double default_r_epsilon = 1e-5;
+constexpr static double default_r_epsilon = 1e-6;
 //constexpr static double default_r_epsilon = 0;
 
 void create_E_psi_psi_matrix(
